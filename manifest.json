@@ -1,0 +1,10 @@
+{
+  "name": "夏祭りレジ",
+  "short_name": "夏祭りレジ",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#f5f5f7",
+  "theme_color": "#1d1d1f",
+  "icons": []
+}

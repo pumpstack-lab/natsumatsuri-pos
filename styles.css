@@ -1,0 +1,247 @@
+:root {
+  --blue: #0071e3;
+  --ink: #1d1d1f;
+  --gray: #86868b;
+  --line: #d2d2d7;
+  --bg: #f5f5f7;
+  --green: #248a3d;
+  --green-bg: #e8f5e9;
+  --red: #ff3b30;
+  --red-bg: #ffebee;
+  --food: #e8590c;
+  --drink: #0071e3;
+  --tap: 44px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  overscroll-behavior: none;
+}
+
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+
+#app { height: 100%; display: flex; flex-direction: column; }
+
+.screen { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+
+.bar {
+  flex: none;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; background: #fff; border-bottom: 1px solid var(--line);
+  min-height: var(--tap);
+}
+.bar__title { font-size: 15px; font-weight: 600; }
+.bar__btn { color: var(--blue); font-size: 15px; font-weight: 500; min-height: var(--tap); padding: 0 4px; }
+
+.scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+/* --- トップ --- */
+.top { flex: 1; display: flex; flex-direction: column; padding: 16px; gap: 12px; }
+.top__lead { text-align: center; padding: 8px 0 4px; }
+.top__lead h1 { font-size: 22px; letter-spacing: -0.4px; }
+.top__lead p { font-size: 13px; color: var(--gray); margin-top: 4px; }
+.top__pick { flex: 1; display: flex; gap: 12px; min-height: 180px; }
+.pick {
+  flex: 1; border-radius: 16px; color: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+}
+.pick--food { background: var(--food); }
+.pick--drink { background: var(--drink); }
+.pick__icon { font-size: 40px; }
+.pick__name { font-size: 22px; font-weight: 700; }
+.pick__meta { font-size: 13px; opacity: 0.85; }
+.top__menu { display: flex; gap: 8px; }
+.top__menu button {
+  flex: 1; background: #fff; border: 1.5px solid var(--line); border-radius: 12px;
+  padding: 12px 4px; font-size: 13px; font-weight: 600; min-height: var(--tap);
+}
+.top__ver { text-align: center; font-size: 11px; color: var(--gray); padding-bottom: 2px; }
+.top__total {
+  display: flex; align-items: baseline; justify-content: space-between;
+  background: #fff; border-radius: 12px; padding: 12px 16px;
+}
+.top__total span { font-size: 13px; font-weight: 600; color: var(--gray); }
+.top__total strong { font-size: 26px; letter-spacing: -0.5px; }
+
+/* --- 注文登録 --- */
+.reg { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.reg__grid {
+  /* 中身の分だけ縦を使い、余った高さは伝票に回す。
+     商品が多い時だけここがスクロールする（縮む下限は 30% に留める）。 */
+  flex: 0 1 auto; min-height: 172px; overflow-y: auto;
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; padding: 10px; align-content: start;
+}
+.pbtn {
+  background: #fff; border: 2px solid var(--line); border-radius: 12px;
+  padding: 14px 6px; min-height: 68px; text-align: center;
+}
+.pbtn:active { background: #f0f7ff; border-color: var(--blue); }
+.pbtn__name { font-size: 15px; font-weight: 600; display: block; }
+.pbtn__price { font-size: 12px; color: var(--gray); margin-top: 4px; display: block; }
+
+.cart {
+  /* 余った縦を受け取って伸びる。商品が全部見えることを優先する。 */
+  flex: 1 1 auto; min-height: 0;
+  background: #fff; border-top: 1px solid var(--line);
+  display: flex; flex-direction: column;
+}
+.cart__list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 8px 16px 0; }
+.cart__row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 3px 0; font-size: 14px; min-height: var(--tap);
+}
+.cart__row button { color: var(--blue); font-size: 22px; width: var(--tap); height: var(--tap); border: 1.5px solid var(--line); border-radius: 10px; }
+.cart__qty { display: flex; align-items: center; gap: 10px; }
+.cart__empty { padding: 14px 16px; color: var(--gray); font-size: 13px; text-align: center; }
+.cart__total {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 8px 16px; border-top: 1.5px solid var(--line); margin-top: 4px;
+}
+.cart__total span { font-size: 13px; font-weight: 600; color: var(--gray); }
+.cart__total strong { font-size: 32px; letter-spacing: -0.8px; }
+
+.pay { flex: none; padding: 8px 10px 12px; background: #fff; }
+.pay__cash { display: flex; gap: 6px; }
+.pay__cash button {
+  flex: 1; background: #fff; border: 1.5px solid var(--line); border-radius: 10px;
+  padding: 12px 2px; font-weight: 600; min-height: var(--tap);
+  font-size: clamp(12px, 1.5vw, 16px);
+  white-space: nowrap;
+}
+.pay__cash button.is-on { border-color: var(--ink); }
+.pay__cash small { display: block; font-size: 10px; color: var(--gray); margin-top: 2px; }
+.pay__recv {
+  display: flex; align-items: baseline; justify-content: space-between;
+  background: var(--ink); border-radius: 10px; padding: 9px 14px; margin-top: 8px;
+}
+.pay__recv span { font-size: 12px; font-weight: 600; color: #98989d; }
+.pay__recv strong { font-size: 24px; color: #fff; letter-spacing: -0.5px; }
+.pay__recv button { color: #98989d; font-size: 12px; font-weight: 500; min-height: var(--tap); padding: 0 6px; }
+.pay__change {
+  display: flex; align-items: baseline; justify-content: space-between;
+  background: var(--green-bg); border: 1.5px solid #34c759; border-radius: 10px;
+  padding: 10px 14px; margin-top: 6px;
+}
+.pay__change span { font-size: 13px; font-weight: 600; color: var(--green); }
+.pay__change strong { font-size: 30px; color: var(--green); letter-spacing: -0.6px; }
+.pay__change.is-short { background: var(--red-bg); border-color: var(--red); }
+.pay__change.is-short span, .pay__change.is-short strong { color: #c62828; }
+.pay__done {
+  width: 100%; background: var(--blue); color: #fff; border-radius: 12px;
+  padding: 16px; font-size: 17px; font-weight: 600; margin-top: 8px; min-height: 54px;
+}
+.pay__done:disabled { background: #c7c7cc; }
+
+/* --- テンキー --- */
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 10px; }
+.keypad button {
+  background: #fff; border: 1.5px solid var(--line); border-radius: 10px;
+  padding: 14px 2px; font-size: 20px; font-weight: 600; min-height: var(--tap);
+}
+
+/* --- 履歴 --- */
+.kpi { flex: none; display: flex; gap: 1px; background: var(--line); }
+.kpi__box { flex: 1; background: #fff; padding: 12px 8px; text-align: center; }
+.kpi__box--main { background: var(--ink); }
+.kpi__label { font-size: 10px; font-weight: 600; color: var(--gray); letter-spacing: 0.4px; }
+.kpi__box--main .kpi__label { color: #98989d; }
+.kpi__value { font-size: 24px; font-weight: 700; letter-spacing: -0.6px; margin-top: 2px; }
+.kpi__box--main .kpi__value { color: #fff; font-size: 30px; }
+
+.tabs { flex: none; display: flex; gap: 6px; padding: 10px 16px 0; }
+.tabs button { flex: 1; padding: 9px; border-radius: 9px; background: var(--bg); font-size: 13px; font-weight: 600; color: var(--gray); min-height: var(--tap); }
+.tabs button.is-on { background: var(--ink); color: #fff; }
+
+.recs { padding: 10px 16px 16px; }
+.rec { border: 1px solid #e5e5ea; border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; width: 100%; text-align: left; min-height: var(--tap); }
+.rec--edited { border-color: #ff9500; background: #fffbf5; }
+.rec--void { opacity: 0.5; }
+.rec--void .rec__amount { text-decoration: line-through; color: var(--gray); }
+.rec__head { display: flex; align-items: baseline; justify-content: space-between; }
+.rec__no { font-size: 14px; font-weight: 600; }
+.rec__amount { font-size: 19px; font-weight: 700; letter-spacing: -0.3px; }
+.rec__body { font-size: 12px; color: var(--gray); margin-top: 4px; display: flex; justify-content: space-between; gap: 10px; }
+.tag { font-size: 10px; font-weight: 600; color: #fff; background: #ff9500; border-radius: 4px; padding: 2px 6px; margin-left: 6px; }
+.tag--void { background: var(--red); }
+
+.pbreak { padding: 10px 16px 16px; }
+.pbreak__row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f2; font-size: 14px; }
+.pbreak__row strong { font-weight: 600; }
+
+/* --- 設定・書き出し --- */
+.plist { padding: 4px 0; }
+.prow { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid #f0f0f2; min-height: var(--tap); }
+.prow__name { font-size: 15px; font-weight: 600; }
+.prow__price { font-size: 13px; color: var(--gray); margin-left: 8px; font-weight: 500; }
+.prow__ctl { display: flex; align-items: center; gap: 10px; }
+.prow__ctl button { color: var(--blue); font-size: 13px; font-weight: 500; min-height: var(--tap); padding: 0 4px; }
+.switch { width: 46px; height: 28px; border-radius: 14px; background: #34c759; position: relative; flex: none; }
+.switch::after { content: ''; position: absolute; right: 3px; top: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; }
+.switch.is-off { background: #c7c7cc; }
+.switch.is-off::after { right: 21px; }
+
+.pad { padding: 16px; }
+.card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+.card h2 { font-size: 15px; margin-bottom: 10px; }
+.btn-primary { width: 100%; background: var(--blue); color: #fff; border-radius: 12px; padding: 15px; font-size: 16px; font-weight: 600; min-height: var(--tap); }
+.btn-ghost { width: 100%; background: #fff; color: var(--blue); border: 1.5px solid var(--blue); border-radius: 12px; padding: 15px; font-size: 16px; font-weight: 600; margin-top: 8px; min-height: var(--tap); }
+.btn-danger { width: 100%; background: #fff; color: var(--red); border: 1.5px solid var(--red); border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 600; min-height: var(--tap); }
+
+/* --- シート（編集パネル） --- */
+.sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: flex-end; z-index: 10; }
+.sheet { width: 100%; background: #fff; border-radius: 16px 16px 0 0; padding: 14px 16px calc(16px + env(safe-area-inset-bottom)); max-height: 88%; overflow-y: auto; }
+.sheet__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.sheet__title { font-size: 16px; font-weight: 600; }
+.sheet__row { display: flex; align-items: center; justify-content: space-between; border: 1px solid #e5e5ea; border-radius: 10px; padding: 6px 12px; margin-bottom: 7px; min-height: var(--tap); }
+/* 編集パネルの数量ボタンも登録画面と同じ44ptを確保する（屋台は暗所・急ぎ・手が濡れる） */
+.sheet__row button { color: var(--blue); font-size: 22px; width: var(--tap); height: var(--tap); border: 1.5px solid var(--line); border-radius: 10px; background: #fff; }
+.sheet__row .cart__qty { gap: 10px; }
+.sheet__total { display: flex; align-items: baseline; justify-content: space-between; border-top: 1.5px solid #e5e5ea; padding-top: 10px; margin: 10px 0 12px; }
+.sheet__total span { font-size: 13px; font-weight: 600; color: var(--gray); }
+.sheet__total strong { font-size: 28px; letter-spacing: -0.5px; }
+.sheet__add { width: 100%; border: 1.5px dashed var(--line); border-radius: 10px; padding: 10px; font-size: 13px; font-weight: 600; color: var(--blue); margin-bottom: 10px; min-height: var(--tap); }
+.field { width: 100%; border: 1.5px solid var(--line); border-radius: 10px; padding: 12px; font-size: 16px; font-family: inherit; margin-bottom: 8px; }
+
+@media (max-width: 620px) {
+  .reg__grid { grid-template-columns: repeat(2, 1fr); }
+  .top__pick { flex-direction: column; }
+}
+
+/* --- 登録完了の通知 --- */
+.toast {
+  position: fixed; left: 50%; bottom: 88px; transform: translateX(-50%);
+  background: var(--ink); color: #fff; border-radius: 12px;
+  padding: 12px 20px; font-size: 15px; font-weight: 600;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.24); z-index: 20;
+  opacity: 1; transition: opacity 400ms ease-out;
+  max-width: 90vw; text-align: center;
+}
+.toast.is-out { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .toast { transition: none; }
+}
+
+/* --- 履歴の編集パネル：預かり金の修正 --- */
+.sheet__cash {
+  border-top: 1.5px solid #e5e5ea; padding-top: 12px; margin-bottom: 12px;
+}
+.sheet__cash-label {
+  font-size: 12px; font-weight: 600; color: var(--gray); margin-bottom: 8px;
+}
+.sheet__cash-none {
+  font-size: 13px; color: var(--gray); padding: 10px 0 2px;
+}
+.sheet__cash .pay__cash button[data-eclear] {
+  flex: 0.7; color: var(--gray);
+}
+.sheet__warn {
+  margin-top: 8px; padding: 9px 12px; border-radius: 9px;
+  background: var(--red-bg); color: #c62828;
+  font-size: 12px; font-weight: 500; line-height: 1.5;
+}
