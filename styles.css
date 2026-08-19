@@ -108,10 +108,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border-right: 1px solid var(--line);
 }
 .lower__right {
-  flex: 0 0 300px;
+  flex: 0 0 380px;
   display: flex; flex-direction: column;
   padding: 10px;
   background: var(--bg);
+  /* 保険: 設計上あふれない想定だが、万一の時に到達不能にしない */
+  overflow-y: auto;
 }
 .cart__list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 6px 8px 0; }
 /* 1行おきに薄いグレー。枠線を増やさずに行の境界を見分けられるようにする */
@@ -123,11 +125,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .cashcol__row { display: flex; gap: 8px; }
 .cashcol__row button {
   flex: 1; background: #fff; border: 1.5px solid var(--line); border-radius: 10px;
-  padding: 13px 2px; font-size: 17px; font-weight: 600; min-height: 52px;
-  white-space: nowrap;
+  padding: 0 4px; font-size: 17px; font-weight: 600; height: 48px;
+  white-space: nowrap; display: flex; align-items: center; justify-content: center;
 }
 .cashcol__row button.is-on { border-color: var(--ink); }
-.cashcol__row button small { display: block; font-size: 11px; color: var(--gray); margin-top: 1px; }
+/* ×N・¥100表記はボタン内の同じ行に出す（何回押してもボタンの高さ・Y座標が変わらないこと） */
+.cashcol__row button small { display: inline; font-size: 11px; color: var(--gray); margin-left: 3px; }
 .cashcol__other { color: var(--blue); border-color: var(--blue) !important; }
 .cashcol__voucher { color: #7c3aed; border-color: #c4b5fd !important; background: #faf8ff !important; }
 .cashcol__voucher.is-on { border-color: #7c3aed !important; }
@@ -135,31 +138,40 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .cashcol__clear { color: var(--gray); }
 .cashcol__clear:disabled { opacity: 0.35; }
 
-/* --- 右パネル: 預かり・お釣りの常設表示 --- */
-.cashinfo { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+/* --- 右パネル: 預かり・お釣りの常設表示 ---
+   情報行はコンパクトに。ただし「現金でもらう」「お釣り」の金額は最重要なので20px以上を維持 */
+.cashinfo { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
 /* 商品券の使用表示（紫）と、商品券を引いた「現金でもらう」額（最重要なので黒地） */
 .pay__voucher {
   display: flex; align-items: baseline; justify-content: space-between;
-  background: #f3efff; border: 1.5px solid #c4b5fd; border-radius: 10px; padding: 8px 14px;
+  background: #f3efff; border: 1.5px solid #c4b5fd; border-radius: 10px; padding: 6px 12px;
 }
-.pay__voucher span { font-size: 12px; font-weight: 600; color: #6d28d9; }
-.pay__voucher strong { font-size: 18px; color: #6d28d9; letter-spacing: -0.3px; }
+.pay__voucher span { font-size: 11px; font-weight: 600; color: #6d28d9; }
+.pay__voucher strong { font-size: 16px; color: #6d28d9; letter-spacing: -0.3px; }
 .pay__due {
   display: flex; align-items: baseline; justify-content: space-between;
-  background: var(--ink); border-radius: 10px; padding: 9px 14px;
+  background: var(--ink); border-radius: 10px; padding: 7px 12px;
 }
-.pay__due span { font-size: 12px; font-weight: 600; color: #ffd60a; }
-.pay__due strong { font-size: 24px; color: #ffd60a; letter-spacing: -0.5px; }
-.cashinfo .pay__recv, .cashinfo .pay__change { margin: 0; }
+.pay__due span { font-size: 11px; font-weight: 600; color: #ffd60a; }
+.pay__due strong { font-size: 20px; color: #ffd60a; letter-spacing: -0.5px; }
+/* 右パネル内はベース(.pay__recv/.pay__change)よりコンパクトに。
+   ただし金額(strong)は最重要なので20px以上を維持する */
+.cashinfo .pay__recv, .cashinfo .pay__change { margin: 0; padding: 7px 12px; }
+.cashinfo .pay__recv span, .cashinfo .pay__change span { font-size: 11px; }
+.cashinfo .pay__recv strong { font-size: 20px; }
+.cashinfo .pay__change strong { font-size: 22px; }
 .pay__recv.is-empty { background: #e8e8ed; }
 .pay__recv.is-empty span { color: #a1a1a6; }
 .pay__recv.is-empty strong { color: #a1a1a6; }
 .pay__change.is-empty { background: #f5f5f7; border-color: var(--line); }
 .pay__change.is-empty span, .pay__change.is-empty strong { color: #c7c7cc; }
 .cart__row {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: flex-start; gap: 12px;
   padding: 4px 0; font-size: 19px; font-weight: 600; min-height: var(--tap);
 }
+/* 商品名+単価の直後に数量・小計を寄せる（中央の無駄な余白を詰めて右パネルの幅を確保） */
+.cart__row > span:first-child { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cart__row .cart__qty { margin-left: auto; }
 .cart__row button { color: var(--blue); font-size: 22px; width: var(--tap); height: var(--tap); border: 1.5px solid var(--line); border-radius: 10px; }
 .cart__qty { display: flex; align-items: center; gap: 10px; }
 .cart__empty { padding: 14px 16px; color: var(--gray); font-size: 13px; text-align: center; }
@@ -193,12 +205,22 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .pay__done:disabled { background: #c7c7cc; }
 
-/* --- テンキー --- */
-.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 10px; }
+/* --- テンキー ---
+   フローに挿入して.lowerを押し潰さないよう、浮遊オーバーレイにする
+   （伝票側の左下に浮かせ、右パネル＝預かり/お釣り情報の上に絶対に重ねない。
+     z-indexはシート(10)より下）。 */
+.keypad {
+  position: fixed; left: 12px; bottom: 78px; width: 300px; max-width: calc(100vw - 24px);
+  background: #fff; border-radius: 14px; box-shadow: 0 6px 24px rgba(0,0,0,0.22);
+  border: 1px solid var(--line);
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 10px;
+  z-index: 8;
+}
 .keypad button {
-  background: #fff; border: 1.5px solid var(--line); border-radius: 10px;
+  background: #f5f5f7; border: 1.5px solid var(--line); border-radius: 10px;
   padding: 14px 2px; font-size: 20px; font-weight: 600; min-height: var(--tap);
 }
+.keypad button:active { background: #f0f7ff; border-color: var(--blue); }
 
 /* --- 履歴 --- */
 .kpi { flex: none; display: flex; gap: 1px; background: var(--line); }
