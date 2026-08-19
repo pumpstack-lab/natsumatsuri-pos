@@ -42,10 +42,11 @@ function closeEdit() {
   render();
 }
 
-// 金額ボタンを押すと積み上がる（登録画面と同じ操作感）
+// 金額ボタンは既存の預かり金に加算する（登録画面と同じ積み上げ感覚）。
+// tapsTotalで置き換えると、元の預かり¥10,000が1タップで¥100に化けるバグになる（レビューで発見・実測確認済み）。
 function tapEditCash(value) {
   draftTaps[value] += 1;
-  draftReceived = tapsTotal(draftTaps);
+  draftReceived = (draftReceived ?? 0) + value;
   render();
 }
 
@@ -56,23 +57,39 @@ function clearEditCash() {
   render();
 }
 
+let editSaving = false;
+
 async function saveEdit(sale) {
+  if (editSaving) return;
   const items = draft.filter((i) => i.qty > 0);
   if (items.length === 0) {
     alert('商品が0件です。取消する場合は「この会計を取消」を押してください。');
     return;
   }
+  editSaving = true;
   const updated = editSaleItems(sale, items, new Date().toISOString(), { received: draftReceived, vouchers: draftVouchers });
-  await putSale(updated);
+  try {
+    await putSale(updated);
+  } catch (e) {
+    editSaving = false;
+    alert('保存できませんでした。もう一度「修正を保存」を押してください。');
+    return;
+  }
   const idx = state.sales.findIndex((s) => s.id === sale.id);
   state.sales[idx] = updated;
+  editSaving = false;
   closeEdit();
 }
 
 async function doVoid(sale) {
   if (!confirm(`顧客 ${sale.seq} の会計 ${YEN(sale.total)} を取消します。よろしいですか？\n\n（履歴には残り、売上から除外されます）`)) return;
   const updated = voidSale(sale, new Date().toISOString());
-  await putSale(updated);
+  try {
+    await putSale(updated);
+  } catch (e) {
+    alert('取消を保存できませんでした。もう一度お試しください。');
+    return;
+  }
   const idx = state.sales.findIndex((s) => s.id === sale.id);
   state.sales[idx] = updated;
   closeEdit();
@@ -80,7 +97,7 @@ async function doVoid(sale) {
 
 function sheetHtml(sale) {
   const total = cartTotal(draft.filter((i) => i.qty > 0));
-  const { change, shortage } = calcChange(total, draftReceived, draftVouchers * VOUCHER_VALUE);
+  const { change, shortage, cashDue } = calcChange(total, draftReceived, draftVouchers * VOUCHER_VALUE);
   const addable = availableProducts(state.products, state.terminal)
     .filter((p) => !draft.some((i) => i.product_id === p.id));
 
@@ -134,6 +151,10 @@ function sheetHtml(sale) {
                 <span>商品券 ${draftVouchers}枚</span>
                 <strong>−${YEN(draftVouchers * VOUCHER_VALUE)}</strong>
               </div>
+              <div class="pay__due">
+                <span>現金でもらう</span>
+                <strong>${YEN(cashDue)}</strong>
+              </div>
             ` : ''}
             <div class="pay__recv ${draftReceived === null ? 'is-empty' : ''}">
               <span>預かり</span>
@@ -163,6 +184,7 @@ export function renderHistory() {
   const sum = summarize(sales);
   const label = state.terminal === 'food' ? '🍔 フード窓口' : '🥤 ドリンク窓口';
   const editing = state.editingSaleId ? sales.find((s) => s.id === state.editingSaleId) : null;
+  const breakdown = productBreakdown(sales);
 
   el.innerHTML = `
     <div class="bar">
@@ -210,7 +232,7 @@ export function renderHistory() {
         </div>
       ` : `
         <div class="pbreak">
-          ${productBreakdown(sales).length === 0 ? '<div class="cart__empty">まだ会計がありません</div>' : productBreakdown(sales).map((p) => `
+          ${breakdown.length === 0 ? '<div class="cart__empty">まだ会計がありません</div>' : breakdown.map((p) => `
             <div class="pbreak__row">
               <span>${esc(p.name)}</span>
               <span><strong>${p.qty}</strong> / ${YEN(p.amount)}</span>
@@ -222,7 +244,15 @@ export function renderHistory() {
     ${editing ? sheetHtml(editing) : ''}
   `;
 
-  el.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => go(b.dataset.go)));
+  el.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => {
+    // 編集パネルを開いたまま画面を移ると、戻った時に古い編集内容が再表示されてしまう
+    state.editingSaleId = null;
+    draft = null;
+    draftReceived = null;
+    draftTaps = null;
+    draftVouchers = 0;
+    go(b.dataset.go);
+  }));
   el.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => {
     state.historyTab = b.dataset.tab;
     render();

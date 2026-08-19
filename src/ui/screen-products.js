@@ -12,7 +12,11 @@ function listFor(terminal) {
 }
 
 async function persist() {
-  await putProducts(state.products);
+  try {
+    await putProducts(state.products);
+  } catch (e) {
+    alert('商品の変更を保存できませんでした。もう一度お試しください。');
+  }
   render();
 }
 

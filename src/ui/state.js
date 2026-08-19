@@ -6,7 +6,6 @@ export const state = {
   screen: 'top',
   terminal: null,
   cart: [],
-  received: null,
   cashTaps: emptyCashTaps(),
   otherAmount: 0,
   vouchers: 0,
@@ -45,7 +44,6 @@ export async function setTerminal(terminal) {
 
 export function resetCart() {
   state.cart = [];
-  state.received = null;
   state.cashTaps = emptyCashTaps();
   state.otherAmount = 0;
   state.vouchers = 0;
