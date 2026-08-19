@@ -1,4 +1,4 @@
-const CACHE = 'natsumatsuri-pos-2026-08-19_1502';
+const CACHE = 'natsumatsuri-pos-2026-08-19_1528';
 const ASSETS = [
   './',
   './index.html',

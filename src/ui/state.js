@@ -9,6 +9,7 @@ export const state = {
   received: null,
   cashTaps: emptyCashTaps(),
   otherAmount: 0,
+  vouchers: 0,
   products: [],
   sales: [],
   historyTab: 'list',
@@ -47,6 +48,7 @@ export function resetCart() {
   state.received = null;
   state.cashTaps = emptyCashTaps();
   state.otherAmount = 0;
+  state.vouchers = 0;
   state.keypadOpen = false;
 }
 

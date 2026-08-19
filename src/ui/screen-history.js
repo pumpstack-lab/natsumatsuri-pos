@@ -4,7 +4,7 @@ import { summarize, productBreakdown } from '../core/summary.js';
 import { editSaleItems, voidSale } from '../core/sale.js';
 import { cartTotal } from '../core/money.js';
 import { availableProducts } from '../core/products.js';
-import { CASH_UNITS, emptyCashTaps, tapsTotal } from '../core/cash.js';
+import { emptyCashTaps, tapsTotal, VOUCHER_VALUE } from '../core/cash.js';
 import { calcChange } from '../core/money.js';
 import { putSale } from '../db.js';
 
@@ -22,12 +22,14 @@ function hhmm(iso) {
 let draft = null;
 let draftReceived = null;   // 修正中の預かり金（null = 記録なし）
 let draftTaps = null;       // 金額ボタンのタップ回数
+let draftVouchers = 0;      // 修正中の商品券の枚数
 
 function openEdit(sale) {
   state.editingSaleId = sale.id;
   draft = sale.items.map((i) => ({ ...i }));
   draftReceived = sale.received;
   draftTaps = emptyCashTaps();
+  draftVouchers = sale.vouchers ?? 0;
   render();
 }
 
@@ -36,6 +38,7 @@ function closeEdit() {
   draft = null;
   draftReceived = null;
   draftTaps = null;
+  draftVouchers = 0;
   render();
 }
 
@@ -49,6 +52,7 @@ function tapEditCash(value) {
 function clearEditCash() {
   draftTaps = emptyCashTaps();
   draftReceived = null;
+  draftVouchers = 0;
   render();
 }
 
@@ -58,7 +62,7 @@ async function saveEdit(sale) {
     alert('商品が0件です。取消する場合は「この会計を取消」を押してください。');
     return;
   }
-  const updated = editSaleItems(sale, items, new Date().toISOString(), { received: draftReceived });
+  const updated = editSaleItems(sale, items, new Date().toISOString(), { received: draftReceived, vouchers: draftVouchers });
   await putSale(updated);
   const idx = state.sales.findIndex((s) => s.id === sale.id);
   state.sales[idx] = updated;
@@ -76,7 +80,7 @@ async function doVoid(sale) {
 
 function sheetHtml(sale) {
   const total = cartTotal(draft.filter((i) => i.qty > 0));
-  const { change, shortage } = calcChange(total, draftReceived);
+  const { change, shortage } = calcChange(total, draftReceived, draftVouchers * VOUCHER_VALUE);
   const addable = availableProducts(state.products, state.terminal)
     .filter((p) => !draft.some((i) => i.product_id === p.id));
 
@@ -109,26 +113,38 @@ function sheetHtml(sale) {
         </div>
 
         <div class="sheet__cash">
-          <div class="sheet__cash-label">預かり金</div>
-          <div class="pay__cash">
-            ${CASH_UNITS.map((v) => `
-              <button data-ecash="${v}" class="${draftTaps[v] > 0 ? 'is-on' : ''}">
-                ${YEN(v)}${draftTaps[v] > 0 ? `<small>×${draftTaps[v]}</small>` : ''}
-              </button>
-            `).join('')}
-            <button data-eclear>クリア</button>
+          <div class="sheet__cash-label">預かり金・商品券</div>
+          <div class="cashcol">
+            <div class="cashcol__row">
+              <button data-ecash="100" class="${draftTaps[100] > 0 ? 'is-on' : ''}">¥100${draftTaps[100] > 0 ? `<small>×${draftTaps[100]}</small>` : ''}</button>
+              <button data-ecash="1000" class="${draftTaps[1000] > 0 ? 'is-on' : ''}">¥1,000${draftTaps[1000] > 0 ? `<small>×${draftTaps[1000]}</small>` : ''}</button>
+            </div>
+            <div class="cashcol__row">
+              <button data-ecash="5000" class="${draftTaps[5000] > 0 ? 'is-on' : ''}">¥5,000${draftTaps[5000] > 0 ? `<small>×${draftTaps[5000]}</small>` : ''}</button>
+              <button data-ecash="10000" class="${draftTaps[10000] > 0 ? 'is-on' : ''}">¥10,000${draftTaps[10000] > 0 ? `<small>×${draftTaps[10000]}</small>` : ''}</button>
+            </div>
+            <div class="cashcol__row">
+              <button data-evoucher class="cashcol__voucher ${draftVouchers > 0 ? 'is-on' : ''}">商品券${draftVouchers > 0 ? `<small>×${draftVouchers}</small>` : `<small>${YEN(VOUCHER_VALUE)}</small>`}</button>
+              <button data-eclear class="cashcol__clear">クリア</button>
+            </div>
           </div>
-          ${draftReceived !== null ? `
-            <div class="pay__recv" style="margin-top:8px">
+          <div class="cashinfo">
+            ${draftVouchers > 0 ? `
+              <div class="pay__voucher">
+                <span>商品券 ${draftVouchers}枚</span>
+                <strong>−${YEN(draftVouchers * VOUCHER_VALUE)}</strong>
+              </div>
+            ` : ''}
+            <div class="pay__recv ${draftReceived === null ? 'is-empty' : ''}">
               <span>預かり</span>
-              <strong>${YEN(draftReceived)}</strong>
+              <strong>${draftReceived === null ? '—' : YEN(draftReceived)}</strong>
             </div>
-            <div class="pay__change ${shortage > 0 ? 'is-short' : ''}" style="margin-top:6px">
+            <div class="pay__change ${draftReceived === null ? 'is-empty' : shortage > 0 ? 'is-short' : ''}">
               <span>${shortage > 0 ? '不足' : 'お釣り'}</span>
-              <strong>${YEN(shortage > 0 ? shortage : change)}</strong>
+              <strong>${draftReceived === null ? '—' : YEN(shortage > 0 ? shortage : change)}</strong>
             </div>
-            ${shortage > 0 ? '<div class="sheet__warn">預かり金が足りません。このまま保存すると預かり・お釣りの記録は消えます。</div>' : ''}
-          ` : '<div class="sheet__cash-none">記録なし（お釣りの記録は残りません）</div>'}
+            ${draftReceived !== null && shortage > 0 ? '<div class="sheet__warn">預かり金が足りません。このまま保存すると預かり・お釣りの記録は消えます。</div>' : ''}
+          </div>
         </div>
 
         <button class="btn-primary" data-save>修正を保存</button>
@@ -167,6 +183,10 @@ export function renderHistory() {
         <div class="kpi__label">平均単価</div>
         <div class="kpi__value">${YEN(sum.average)}</div>
       </div>
+      <div class="kpi__box">
+        <div class="kpi__label">商品券</div>
+        <div class="kpi__value">${sum.voucherCount}<span style="font-size:13px;font-weight:600;color:var(--gray)">枚</span></div>
+      </div>
     </div>
     <div class="tabs">
       <button data-tab="list" class="${state.historyTab === 'list' ? 'is-on' : ''}">会計履歴</button>
@@ -182,7 +202,7 @@ export function renderHistory() {
                 <span class="rec__amount">${YEN(s.total)}</span>
               </div>
               <div class="rec__body">
-                <span>${s.items.map((i) => `${esc(i.name)}×${i.qty}`).join(', ')}${s.received !== null ? ` · 預${YEN(s.received)} / 釣${YEN(s.change)}` : ''}</span>
+                <span>${s.items.map((i) => `${esc(i.name)}×${i.qty}`).join(', ')}${(s.vouchers ?? 0) > 0 ? ` · 券${s.vouchers}枚` : ''}${s.received !== null ? ` · 預${YEN(s.received)} / 釣${YEN(s.change)}` : ''}</span>
                 <span>${hhmm(s.created_at)}</span>
               </div>
             </button>
@@ -238,6 +258,10 @@ export function renderHistory() {
       }
     });
     el.querySelectorAll('[data-ecash]').forEach((b) => b.addEventListener('click', () => tapEditCash(Number(b.dataset.ecash))));
+    el.querySelector('[data-evoucher]').addEventListener('click', () => {
+      draftVouchers += 1;
+      render();
+    });
     el.querySelector('[data-eclear]').addEventListener('click', clearEditCash);
     el.querySelector('[data-save]').addEventListener('click', () => saveEdit(editing));
     el.querySelector('[data-void]').addEventListener('click', () => doVoid(editing));

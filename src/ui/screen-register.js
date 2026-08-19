@@ -3,7 +3,7 @@ import { state, go, render, resetCart, nextSeq } from './state.js';
 import { availableProducts } from '../core/products.js';
 import { cartTotal, calcChange } from '../core/money.js';
 import { createSale } from '../core/sale.js';
-import { CASH_UNITS, emptyCashTaps, tapsTotal } from '../core/cash.js';
+import { CASH_UNITS, emptyCashTaps, tapsTotal, VOUCHER_VALUE } from '../core/cash.js';
 import { putSale } from '../db.js';
 
 const YEN = (n) => `¥${n.toLocaleString('ja-JP')}`;
@@ -42,6 +42,7 @@ function tapCash(value) {
 function clearCash() {
   state.cashTaps = emptyCashTaps();
   state.otherAmount = 0;
+  state.vouchers = 0;
   state.keypadOpen = false;
   render();
 }
@@ -55,7 +56,7 @@ async function complete() {
 
   const total = cartTotal(state.cart);
   const received = receivedTotal();
-  const { canComplete } = calcChange(total, received);
+  const { canComplete } = calcChange(total, received, state.vouchers * VOUCHER_VALUE);
   if (!canComplete) return;
 
   saving = true;
@@ -67,6 +68,7 @@ async function complete() {
     seq: nextSeq(state.terminal),
     items: state.cart,
     received,
+    vouchers: state.vouchers,
     now: new Date().toISOString(),
   });
 
@@ -117,7 +119,8 @@ export function renderRegister() {
   const products = availableProducts(state.products, state.terminal);
   const total = cartTotal(state.cart);
   const received = receivedTotal();
-  const { change, shortage, canComplete } = calcChange(total, received);
+  const voucherAmount = state.vouchers * VOUCHER_VALUE;
+  const { change, shortage, canComplete, cashDue } = calcChange(total, received, voucherAmount);
   const label = state.terminal === 'food' ? '🍔 フード' : '🥤 ドリンク';
   const seq = nextSeq(state.terminal);
 
@@ -171,11 +174,24 @@ export function renderRegister() {
               <button data-cash="10000" class="${state.cashTaps[10000] > 0 ? 'is-on' : ''}">¥10,000${state.cashTaps[10000] > 0 ? `<small>×${state.cashTaps[10000]}</small>` : ''}</button>
             </div>
             <div class="cashcol__row">
+              <button data-voucher class="cashcol__voucher ${state.vouchers > 0 ? 'is-on' : ''}">商品券${state.vouchers > 0 ? `<small>×${state.vouchers}</small>` : `<small>${YEN(VOUCHER_VALUE)}</small>`}</button>
               <button data-other class="cashcol__other">その他</button>
-              <button data-clear class="cashcol__clear" ${received === null ? 'disabled' : ''}>クリア</button>
+            </div>
+            <div class="cashcol__row">
+              <button data-clear class="cashcol__clear" ${received === null && state.vouchers === 0 ? 'disabled' : ''}>クリア</button>
             </div>
           </div>
           <div class="cashinfo">
+            ${state.vouchers > 0 ? `
+              <div class="pay__voucher">
+                <span>商品券 ${state.vouchers}枚</span>
+                <strong>−${YEN(voucherAmount)}</strong>
+              </div>
+              <div class="pay__due">
+                <span>現金でもらう</span>
+                <strong>${YEN(cashDue)}</strong>
+              </div>
+            ` : ''}
             <div class="pay__recv ${received === null ? 'is-empty' : ''}">
               <span>預かり</span>
               <strong>${received === null ? '—' : YEN(received)}</strong>
@@ -209,6 +225,10 @@ export function renderRegister() {
   });
   el.querySelectorAll('[data-cash]').forEach((btn) => {
     btn.addEventListener('click', () => tapCash(Number(btn.dataset.cash)));
+  });
+  el.querySelector('[data-voucher]').addEventListener('click', () => {
+    state.vouchers += 1;
+    render();
   });
   el.querySelector('[data-other]').addEventListener('click', () => {
     state.keypadOpen = !state.keypadOpen;

@@ -67,3 +67,13 @@ test('productBreakdown: 売上金額の多い順に並ぶ', () => {
   const r = productBreakdown(SALES);
   assert.equal(r[0].name, '焼きそば');
 });
+
+test('summarize: 商品券の使用枚数を合計する（取消は除外）', () => {
+  const sales = [
+    { id: 'a', total: 500, status: 'active', vouchers: 3, items: [] },
+    { id: 'b', total: 300, status: 'active', vouchers: 2, items: [] },
+    { id: 'c', total: 200, status: 'voided', vouchers: 4, items: [] },
+    { id: 'd', total: 100, status: 'active', items: [] },
+  ];
+  assert.equal(summarize(sales).voucherCount, 5, '有効な会計の3+2枚。取消の4枚と未定義は除外');
+});

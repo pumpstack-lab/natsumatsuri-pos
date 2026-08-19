@@ -20,7 +20,7 @@ const SALES = [
 
 test('detailCsv: ヘッダー行がある', () => {
   const rows = detailCsv(SALES).split('\n');
-  assert.equal(rows[0], '会計ID,顧客番号,窓口,商品名,単価,個数,小計,会計合計,預かり,お釣り,状態,登録時刻');
+  assert.equal(rows[0], '会計ID,顧客番号,窓口,商品名,単価,個数,小計,会計合計,預かり,お釣り,状態,登録時刻,商品券');
 });
 
 test('detailCsv: 1商品につき1行出る', () => {
@@ -57,7 +57,7 @@ test('detailCsv: 商品名にカンマがあっても引用符で囲まれる', 
   }];
   const row = detailCsv(sales).trim().split('\n')[1];
   assert.ok(row.includes('"ドリンク,大"'));
-  assert.equal(row.split(',').length, 13);
+  assert.equal(row.split(',').length, 14);
 });
 
 test('detailCsv: 商品名に引用符があっても二重化される', () => {
@@ -108,4 +108,34 @@ test('detailCsv: =で始まる商品名がExcelで数式として実行されな
   }];
   const row = detailCsv(sales).trim().split('\n')[1];
   assert.ok(!row.includes(',=1+1,'), '素の=1+1がそのまま出てはいけない');
+});
+
+test('detailCsv: 商品券の枚数が末尾列に出る', () => {
+  const sales = [{
+    id: 'x', terminal: 'food', seq: 1, total: 1000, received: 1000, change: 300, vouchers: 3,
+    status: 'active', edited: false, created_at: '2026-09-18T10:00:00.000Z',
+    items: [{ product_id: 'p1', name: '焼きそば', unit_price: 500, qty: 2 }],
+  }];
+  const rows = detailCsv(sales).trim().split('\n');
+  assert.ok(rows[0].endsWith(',商品券'), 'ヘッダー末尾に商品券列');
+  assert.ok(rows[1].endsWith(',3'), 'データ行の末尾に枚数');
+});
+
+test('detailCsv: 商品券0枚は空欄になる', () => {
+  const sales = [{
+    id: 'x', terminal: 'food', seq: 1, total: 500, received: null, change: null, vouchers: 0,
+    status: 'active', edited: false, created_at: '2026-09-18T10:00:00.000Z',
+    items: [{ product_id: 'p1', name: '焼きそば', unit_price: 500, qty: 1 }],
+  }];
+  assert.ok(detailCsv(sales).trim().split('\n')[1].endsWith(','), '0枚は空欄');
+});
+
+test('detailCsv: 状態列の位置は変わらない（既存の集計手順を壊さない）', () => {
+  const sales = [{
+    id: 'x', terminal: 'food', seq: 1, total: 500, received: null, change: null, vouchers: 1,
+    status: 'active', edited: false, created_at: '2026-09-18T10:00:00.000Z',
+    items: [{ product_id: 'p1', name: '焼きそば', unit_price: 500, qty: 1 }],
+  }];
+  const row = detailCsv(sales).trim().split('\n')[1];
+  assert.equal(row.split(',')[10], '有効', '状態は11列目(K列)のまま');
 });

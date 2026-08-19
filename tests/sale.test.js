@@ -193,3 +193,40 @@ test('editSaleItems: 第4引数を省略すると従来通り動く（後方互�
   assert.equal(edited.received, 2000);
   assert.equal(edited.change, 1000);
 });
+
+// --- 商品券（2026-08-19） ---
+
+test('createSale: 商品券の枚数が記録される', () => {
+  const s = createSale({
+    terminal: 'food', seq: 1, received: 1000, vouchers: 3, now: '2026-09-18T19:42:00.000Z',
+    items: [{ product_id: 'p1', name: '焼きそば', unit_price: 500, qty: 2 }],
+  });
+  assert.equal(s.vouchers, 3);
+});
+
+test('createSale: 商品券を引いた残りでお釣りを計算する', () => {
+  // 合計¥1,000 - 商品券3枚¥300 = 現金¥700。¥1,000預かり → お釣り¥300
+  const s = createSale({
+    terminal: 'food', seq: 1, received: 1000, vouchers: 3, now: '2026-09-18T19:42:00.000Z',
+    items: [{ product_id: 'p1', name: '焼きそば', unit_price: 500, qty: 2 }],
+  });
+  assert.equal(s.total, 1000, '売上は全額のまま（商品券は後で換金される）');
+  assert.equal(s.change, 300);
+});
+
+test('createSale: 商品券なしなら0で記録される', () => {
+  const s = createSale({
+    terminal: 'food', seq: 1, received: null, now: '2026-09-18T19:42:00.000Z',
+    items: [{ product_id: 'p1', name: '焼きそば', unit_price: 500, qty: 1 }],
+  });
+  assert.equal(s.vouchers, 0);
+});
+
+test('editSaleItems: 商品券の枚数を修正できる', () => {
+  const s = createSale({
+    terminal: 'food', seq: 1, received: null, vouchers: 2, now: '2026-09-18T19:42:00.000Z',
+    items: [{ product_id: 'p1', name: '焼きそば', unit_price: 500, qty: 2 }],
+  });
+  const e = editSaleItems(s, s.items, '2026-09-18T19:50:00.000Z', { received: null, vouchers: 5 });
+  assert.equal(e.vouchers, 5);
+});

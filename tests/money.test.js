@@ -59,3 +59,48 @@ test('calcChange: 伝票が空(合計0)なら完了不可', () => {
   const r = calcChange(0, null);
   assert.equal(r.canComplete, false);
 });
+
+// --- 商品券と白紙バグ対応（2026-08-19 オーナー要望） ---
+
+test('calcChange: 伝票が空でも預かり金を入れてクラッシュしない（白紙バグ）', () => {
+  const r = calcChange(0, 1000);
+  assert.equal(r.canComplete, false, '空の会計は完了できない');
+  assert.notEqual(r.change, null, '表示用の値が返る（nullだと画面が落ちる）');
+});
+
+test('calcChange: 商品券で全額まかなえたら現金0で完了できる', () => {
+  const r = calcChange(300, null, 300);
+  assert.equal(r.cashDue, 0);
+  assert.equal(r.canComplete, true);
+});
+
+test('calcChange: 商品券を引いた残りが現金でもらう額になる', () => {
+  const r = calcChange(1100, null, 300);
+  assert.equal(r.cashDue, 800);
+  assert.equal(r.canComplete, true, '預かり未入力＝残額ちょうど受領で完了できる');
+});
+
+test('calcChange: 商品券+現金でお釣りが出る', () => {
+  // 合計¥1,100 - 商品券¥300 = 現金¥800。¥1,000預かり → お釣り¥200
+  const r = calcChange(1100, 1000, 300);
+  assert.equal(r.change, 200);
+  assert.equal(r.canComplete, true);
+});
+
+test('calcChange: 商品券を引いても現金が不足なら完了不可', () => {
+  const r = calcChange(1100, 500, 300);
+  assert.equal(r.shortage, 300);
+  assert.equal(r.canComplete, false);
+});
+
+test('calcChange: 商品券が合計を超えてもお釣りは出ない（cashDue=0）', () => {
+  const r = calcChange(200, null, 300);
+  assert.equal(r.cashDue, 0);
+  assert.equal(r.canComplete, true);
+});
+
+test('calcChange: 商品券なし（第3引数省略）は従来通り', () => {
+  const r = calcChange(1400, 2000);
+  assert.equal(r.change, 600);
+  assert.equal(r.cashDue, 1400);
+});

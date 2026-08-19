@@ -51,6 +51,7 @@ export function renderExport() {
           <h2>書き出す内容</h2>
           <div style="font-size:13px;color:var(--gray);line-height:1.8">
             有効な会計：<strong style="color:var(--ink)">${sum.count}件 / ${YEN(sum.totalSales)}</strong><br>
+            商品券の使用：<strong style="color:var(--ink)">${sum.voucherCount}枚</strong>（換金用・CSVの商品券列に枚数が出ます）<br>
             取消した会計：${voided}件（CSVには「取消」として出力されます）<br>
             全レコード：${sales.length}件
           </div>
