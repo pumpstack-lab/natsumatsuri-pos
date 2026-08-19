@@ -37,6 +37,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .bar__title { font-size: 15px; font-weight: 600; }
 .bar__btn { color: var(--blue); font-size: 15px; font-weight: 500; min-height: var(--tap); padding: 0 4px; }
+.bar__actions { display: flex; align-items: center; gap: 14px; }
+.bar__seq { font-size: 15px; font-weight: 500; color: var(--gray); }
+@media (max-width: 620px) {
+  .bar__actions { gap: 8px; }
+  .bar__actions .bar__btn { font-size: 13px; }
+  .bar__seq { display: none; } /* 狭い幅では顧客番号を省略してボタンを優先 */
+}
 
 .scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 

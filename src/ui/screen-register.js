@@ -2,7 +2,7 @@ import { esc } from './escape.js';
 import { state, go, render, resetCart, nextSeq } from './state.js';
 import { availableProducts } from '../core/products.js';
 import { cartTotal, calcChange } from '../core/money.js';
-import { createSale } from '../core/sale.js';
+import { createSale, voidSale } from '../core/sale.js';
 import { CASH_UNITS, emptyCashTaps, tapsTotal, VOUCHER_VALUE } from '../core/cash.js';
 import { putSale } from '../db.js';
 
@@ -90,6 +90,38 @@ async function complete() {
   render();
 }
 
+// 誤って支払い完了した直前の会計を取り消し、内容を編集中の伝票に復元する。
+// 取消レコードは履歴に残す（集計の追跡可能性を守る・本ツール共通の方針）。
+async function undoLast() {
+  const last = state.sales.find((s) => s.terminal === state.terminal && s.status === 'active');
+  if (!last) {
+    alert('修正できる会計がありません。');
+    return;
+  }
+  const summary = last.items.map((i) => `${i.name}×${i.qty}`).join(', ');
+  const warn = state.cart.length > 0 ? '\n\n※いま入力中の伝票は消えます。' : '';
+  if (!confirm(`直前の会計（顧客 ${last.seq}・${YEN(last.total)}）を取り消して、内容を編集に戻します。\n${summary}${warn}\n\nよろしいですか？`)) return;
+
+  const voided = voidSale(last, new Date().toISOString());
+  try {
+    await putSale(voided);
+  } catch (e) {
+    alert('取消を保存できませんでした。もう一度お試しください。');
+    return;
+  }
+  const idx = state.sales.findIndex((s) => s.id === last.id);
+  state.sales[idx] = voided;
+
+  // 会計内容を編集中の状態へ復元（預かり金は合計額として「その他」枠に入れる）
+  state.cart = last.items.map((i) => ({ ...i }));
+  state.cashTaps = emptyCashTaps();
+  state.otherAmount = last.received ?? 0;
+  state.vouchers = last.vouchers ?? 0;
+  state.keypadOpen = false;
+  showToast(`顧客 ${last.seq} を取り消し、内容を編集に戻しました`);
+  render();
+}
+
 // 支払い完了の確認ダイアログは意図的に入れない（速度優先）。
 // 代わりに登録内容を短く表示して、押し間違いにその場で気付けるようにする。
 function showToast(message) {
@@ -128,7 +160,11 @@ export function renderRegister() {
     <div class="bar">
       <button class="bar__btn" data-go="top">‹ トップ</button>
       <span class="bar__title">${label}</span>
-      <span class="bar__btn" style="color:var(--gray)">顧客 ${seq}組目</span>
+      <span class="bar__actions">
+        <button class="bar__btn" data-undo>↩ 直前を修正</button>
+        <button class="bar__btn" data-go2="history">📋 履歴・集計</button>
+        <span class="bar__seq">顧客 ${seq}組目</span>
+      </span>
     </div>
     <div class="reg">
       <div class="reg__grid ${products.length > 6 ? 'reg__grid--dense' : ''}">
@@ -207,6 +243,8 @@ export function renderRegister() {
   `;
 
   el.querySelector('[data-go="top"]').addEventListener('click', () => go('top'));
+  el.querySelector('[data-undo]').addEventListener('click', undoLast);
+  el.querySelector('[data-go2]').addEventListener('click', () => go('history'));
   el.querySelectorAll('[data-add]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const p = products.find((x) => x.id === btn.dataset.add);
