@@ -179,19 +179,17 @@ export function renderRegister() {
             </div>
             <div class="cashcol__row">
               <button data-clear class="cashcol__clear" ${received === null && state.vouchers === 0 ? 'disabled' : ''}>クリア</button>
+              <div class="voucher-mini ${state.vouchers > 0 ? 'is-on' : ''}">
+                <span>商品券</span>
+                <strong>${state.vouchers > 0 ? `−${YEN(voucherAmount)}` : '—'}</strong>
+              </div>
             </div>
           </div>
           <div class="cashinfo">
-            ${state.vouchers > 0 ? `
-              <div class="pay__voucher">
-                <span>商品券 ${state.vouchers}枚</span>
-                <strong>−${YEN(voucherAmount)}</strong>
-              </div>
-              <div class="pay__due">
-                <span>現金でもらう</span>
-                <strong>${YEN(cashDue)}</strong>
-              </div>
-            ` : ''}
+            <div class="pay__due">
+              <span>現金でもらう</span>
+              <strong>${total > 0 ? YEN(cashDue) : '—'}</strong>
+            </div>
             <div class="pay__recv ${received === null ? 'is-empty' : ''}">
               <span>預かり</span>
               <strong>${received === null ? '—' : YEN(received)}</strong>
@@ -201,12 +199,10 @@ export function renderRegister() {
               <strong>${received === null ? '—' : YEN(shortage > 0 ? shortage : change)}</strong>
             </div>
           </div>
+          <button class="pay__done pay__done--panel" data-done ${canComplete ? '' : 'disabled'}>支払い完了</button>
         </div>
       </div>
       ${state.keypadOpen ? keypadHtml() : ''}
-      <div class="pay">
-        <button class="pay__done" data-done ${canComplete ? '' : 'disabled'}>支払い完了</button>
-      </div>
     </div>
   `;
 

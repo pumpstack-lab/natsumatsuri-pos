@@ -135,12 +135,23 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .cashcol__voucher { color: #7c3aed; border-color: #c4b5fd !important; background: #faf8ff !important; }
 .cashcol__voucher.is-on { border-color: #7c3aed !important; }
 .cashcol__voucher small { color: #7c3aed; }
-.cashcol__clear { color: var(--gray); }
+.cashcol__clear { color: var(--gray); flex: 0.8; }
+/* クリアの隣の商品券マイナス表示（常設・ボタンと同じ高さで位置固定） */
+.voucher-mini {
+  flex: 1.2; height: 48px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 12px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff;
+}
+.voucher-mini span { font-size: 12px; font-weight: 600; color: var(--gray); }
+.voucher-mini strong { font-size: 16px; color: #c7c7cc; }
+.voucher-mini.is-on { background: #f3efff; border-color: #c4b5fd; }
+.voucher-mini.is-on span { color: #6d28d9; }
+.voucher-mini.is-on strong { color: #6d28d9; }
 .cashcol__clear:disabled { opacity: 0.35; }
 
 /* --- 右パネル: 預かり・お釣りの常設表示 ---
    情報行はコンパクトに。ただし「現金でもらう」「お釣り」の金額は最重要なので20px以上を維持 */
 .cashinfo { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
+.pay__done--panel { width: 100%; margin-top: 8px; }
 /* 商品券の使用表示（紫）と、商品券を引いた「現金でもらう」額（最重要なので黒地） */
 .pay__voucher {
   display: flex; align-items: baseline; justify-content: space-between;
@@ -293,9 +304,11 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   .lower { flex-direction: column; overflow-y: auto; }
   .lower__left { flex: none; border-right: none; border-bottom: 1px solid var(--line); }
   .reg__grid { height: 30vh; }
+  /* スマホでは完了ボタンをスクロール中も画面下に張り付かせる */
+  .pay__done--panel { position: sticky; bottom: 0; box-shadow: 0 -4px 12px rgba(245,245,247,0.9); }
   /* 高さを固定（空でも同じ）にすることで、商品を入れても金額パネルが1pxも動かない */
   .cart__list { flex: none; height: 24vh; overflow-y: auto; }
-  .lower__right { flex: none; }
+  .lower__right { flex: none; overflow: visible; } /* stickyの基準を.lowerに戻す */
 }
 
 /* --- 登録完了の通知 --- */
@@ -323,4 +336,16 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   margin-top: 8px; padding: 9px 12px; border-radius: 9px;
   background: var(--red-bg); color: #c62828;
   font-size: 12px; font-weight: 500; line-height: 1.5;
+}
+
+/* 画面が低い時（SafariのURLバーが出ているiPad横など）は右パネルを一段圧縮し、
+   支払い完了までスクロールなしで収める */
+@media (max-height: 760px) and (min-width: 621px) {
+  .lower__right { padding: 8px; }
+  .cashcol { gap: 6px; }
+  .cashcol__row { gap: 6px; }
+  .cashcol__row button, .voucher-mini { height: 44px; }
+  .cashinfo { margin-top: 6px; gap: 4px; }
+  .cashinfo .pay__recv, .cashinfo .pay__change, .pay__due { padding-top: 6px; padding-bottom: 6px; }
+  .pay__done--panel { padding: 12px; margin-top: 6px; }
 }
