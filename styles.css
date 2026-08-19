@@ -234,6 +234,10 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 10px;
   z-index: 8;
 }
+.keypad__enter {
+  grid-column: 1 / -1; background: var(--blue) !important; color: #fff !important;
+  border-color: var(--blue) !important; font-size: 16px !important;
+}
 .keypad button {
   background: #f5f5f7; border: 1.5px solid var(--line); border-radius: 10px;
   padding: 14px 2px; font-size: 20px; font-weight: 600; min-height: var(--tap);

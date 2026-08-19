@@ -140,6 +140,7 @@ function keypadHtml() {
   return `
     <div class="keypad">
       ${keys.map((k) => `<button data-key="${k}">${k}</button>`).join('')}
+      <button class="keypad__enter" data-key="enter">確定</button>
     </div>
   `;
 }
@@ -273,6 +274,12 @@ export function renderRegister() {
   el.querySelectorAll('[data-key]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const k = btn.dataset.key;
+      if (k === 'enter') {
+        // 確定＝入力を反映したままテンキーを閉じる
+        state.keypadOpen = false;
+        render();
+        return;
+      }
       let s = String(state.otherAmount);
       if (k === '⌫') s = s.slice(0, -1) || '0';
       else if (k === '00') s = s === '0' ? '0' : s + '00';

@@ -190,7 +190,10 @@ export function renderHistory() {
     <div class="bar">
       <button class="bar__btn" data-go="top">‹ トップ</button>
       <span class="bar__title">${label} の履歴</span>
-      <button class="bar__btn" data-go="export">書き出し</button>
+      <span class="bar__actions">
+        <button class="bar__btn" data-go="register">🧾 レジへ戻る</button>
+        <button class="bar__btn" data-go="export">書き出し</button>
+      </span>
     </div>
     <div class="kpi">
       <div class="kpi__box kpi__box--main">

@@ -10,9 +10,15 @@ function terminalStats(terminal) {
 }
 
 async function pick(terminal) {
+  // 同じ窓口に入り直す時は入力中の伝票を保持する
+  // （履歴を見に行って戻っただけで消えるのを防ぐ・2026-08-19 オーナー指摘）
+  if (state.terminal === terminal) {
+    go('register');
+    return;
+  }
   if (state.terminal && state.terminal !== terminal) {
     const label = terminal === 'food' ? 'フード' : 'ドリンク';
-    const ok = confirm(`この端末を「${label}窓口」に切り替えます。よろしいですか？\n\n（登録済みの売上は消えません）`);
+    const ok = confirm(`この端末を「${label}窓口」に切り替えます。よろしいですか？\n\n（登録済みの売上は消えません。入力中の伝票はクリアされます）`);
     if (!ok) return;
   }
   await setTerminal(terminal);
