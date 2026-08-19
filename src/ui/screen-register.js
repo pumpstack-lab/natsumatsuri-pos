@@ -136,47 +136,59 @@ export function renderRegister() {
           </button>
         `).join('')}
       </div>
-      <div class="cart">
-        <div class="cart__list">
-          ${state.cart.length === 0
-            ? '<div class="cart__empty">商品をタップしてください</div>'
-            : state.cart.map((i) => `
-              <div class="cart__row">
-                <span>${esc(i.name)} <span style="color:var(--gray)">${YEN(i.unit_price)}</span></span>
-                <span class="cart__qty">
-                  <button data-minus="${esc(i.product_id)}">−</button>
-                  <span>${i.qty}</span>
-                  <button data-plus="${esc(i.product_id)}">＋</button>
-                  <strong style="min-width:72px;text-align:right">${YEN(i.unit_price * i.qty)}</strong>
-                </span>
-              </div>
-            `).join('')}
+      <div class="lower">
+        <div class="lower__left">
+          <div class="cart__list">
+            ${state.cart.length === 0
+              ? '<div class="cart__empty">商品をタップしてください</div>'
+              : state.cart.map((i) => `
+                <div class="cart__row">
+                  <span>${esc(i.name)} <span style="color:var(--gray)">${YEN(i.unit_price)}</span></span>
+                  <span class="cart__qty">
+                    <button data-minus="${esc(i.product_id)}">−</button>
+                    <span>${i.qty}</span>
+                    <button data-plus="${esc(i.product_id)}">＋</button>
+                    <strong style="min-width:80px;text-align:right">${YEN(i.unit_price * i.qty)}</strong>
+                  </span>
+                </div>
+              `).join('')}
+          </div>
+          <div class="cart__total">
+            <span>${state.cart.length}点 / 合計</span>
+            <strong>${YEN(total)}</strong>
+          </div>
         </div>
-        <div class="cart__total">
-          <span>${state.cart.length}点 / 合計</span>
-          <strong>${YEN(total)}</strong>
+        <div class="lower__right">
+          <!-- 預かり金ボタンは右側の縦固定パネル。伝票が増えても預かり/お釣りが出ても絶対に動かない
+               （連打時に1回目でボタンがずれて2回目が空振りするストレスを解消・2026-08-19 オーナー指摘） -->
+          <div class="cashcol">
+            <div class="cashcol__row">
+              <button data-cash="100" class="${state.cashTaps[100] > 0 ? 'is-on' : ''}">¥100${state.cashTaps[100] > 0 ? `<small>×${state.cashTaps[100]}</small>` : ''}</button>
+              <button data-cash="1000" class="${state.cashTaps[1000] > 0 ? 'is-on' : ''}">¥1,000${state.cashTaps[1000] > 0 ? `<small>×${state.cashTaps[1000]}</small>` : ''}</button>
+            </div>
+            <div class="cashcol__row">
+              <button data-cash="5000" class="${state.cashTaps[5000] > 0 ? 'is-on' : ''}">¥5,000${state.cashTaps[5000] > 0 ? `<small>×${state.cashTaps[5000]}</small>` : ''}</button>
+              <button data-cash="10000" class="${state.cashTaps[10000] > 0 ? 'is-on' : ''}">¥10,000${state.cashTaps[10000] > 0 ? `<small>×${state.cashTaps[10000]}</small>` : ''}</button>
+            </div>
+            <div class="cashcol__row">
+              <button data-other class="cashcol__other">その他</button>
+              <button data-clear class="cashcol__clear" ${received === null ? 'disabled' : ''}>クリア</button>
+            </div>
+          </div>
+          <div class="cashinfo">
+            <div class="pay__recv ${received === null ? 'is-empty' : ''}">
+              <span>預かり</span>
+              <strong>${received === null ? '—' : YEN(received)}</strong>
+            </div>
+            <div class="pay__change ${received === null ? 'is-empty' : shortage > 0 ? 'is-short' : ''}">
+              <span>${shortage > 0 ? '不足' : 'お釣り'}</span>
+              <strong>${received === null ? '—' : YEN(shortage > 0 ? shortage : change)}</strong>
+            </div>
+          </div>
         </div>
       </div>
+      ${state.keypadOpen ? keypadHtml() : ''}
       <div class="pay">
-        <div class="pay__cash">
-          ${CASH_UNITS.map((v) => `
-            <button data-cash="${v}" class="${state.cashTaps[v] > 0 ? 'is-on' : ''}">
-              ${YEN(v)}${state.cashTaps[v] > 0 ? `<small>×${state.cashTaps[v]}</small>` : ''}
-            </button>
-          `).join('')}
-          <button data-other style="color:var(--blue);border-color:var(--blue)">その他</button>
-        </div>
-        ${state.keypadOpen ? keypadHtml() : ''}
-        ${received !== null ? `
-          <div class="pay__recv">
-            <span>預かり</span>
-            <span><strong>${YEN(received)}</strong> <button data-clear>クリア</button></span>
-          </div>
-          <div class="pay__change ${shortage > 0 ? 'is-short' : ''}">
-            <span>${shortage > 0 ? '不足' : 'お釣り'}</span>
-            <strong>${YEN(shortage > 0 ? shortage : change)}</strong>
-          </div>
-        ` : ''}
         <button class="pay__done" data-done ${canComplete ? '' : 'disabled'}>支払い完了</button>
       </div>
     </div>
