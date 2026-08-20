@@ -6,6 +6,7 @@ import { cartTotal, calcChange } from '../core/money.js';
 import { createSale, voidSale } from '../core/sale.js';
 import { CASH_UNITS_FOR, emptyCashTaps, tapsTotal, VOUCHER_VALUE } from '../core/cash.js';
 import { putSale } from '../db.js';
+import { pushAll } from '../sync.js';
 
 const YEN = (n) => `¥${n.toLocaleString('ja-JP')}`;
 
@@ -85,6 +86,7 @@ async function complete() {
   }
 
   state.sales.unshift(sale);
+  pushAll().catch(() => {});  // オンラインなら裏で同期（オフラインなら黙ってスキップ）
   showToast(`顧客 ${sale.seq}　${YEN(sale.total)} を登録しました`);
   resetCart();
   saving = false;
@@ -131,6 +133,7 @@ async function completeStaff(payment) {
     return;
   }
   state.sales.unshift(sale);
+  pushAll().catch(() => {});
   const label = payment === 'unpaid' ? '未納' : payment === 'paypay' ? 'PayPay' : '現金';
   showToast(`職員販売（${state.staffName}・${label}）${YEN(sale.total)} を登録しました`);
   resetCart();

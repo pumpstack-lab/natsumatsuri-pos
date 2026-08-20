@@ -1,5 +1,6 @@
 import { state, go, setTerminal, resetCart, render } from './state.js';
 import { summarize } from '../core/summary.js';
+import { openMerged } from './screen-merged.js';
 import { BUILD } from '../version.js';
 
 const YEN = (n) => `¥${n.toLocaleString('ja-JP')}`;
@@ -56,6 +57,7 @@ export function renderTop() {
         <button data-go="history">📋 履歴・集計</button>
         <button data-go="products">🍳 商品の設定</button>
         <button data-go="export">📤 CSV書き出し</button>
+        <button data-merged>🌐 合算履歴</button>
       </div>
       <div class="top__ver">ver ${BUILD}</div>
       <div class="top__total">
@@ -68,6 +70,7 @@ export function renderTop() {
   el.querySelectorAll('[data-pick]').forEach((btn) => {
     btn.addEventListener('click', () => pick(btn.dataset.pick));
   });
+  el.querySelector('[data-merged]').addEventListener('click', openMerged);
   el.querySelectorAll('[data-go]').forEach((btn) => {
     btn.addEventListener('click', () => {
       if (!state.terminal && btn.dataset.go !== 'products') {

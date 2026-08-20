@@ -7,6 +7,7 @@ import { availableProducts } from '../core/products.js';
 import { emptyCashTaps, tapsTotal, VOUCHER_VALUE } from '../core/cash.js';
 import { calcChange } from '../core/money.js';
 import { putSale } from '../db.js';
+import { pushAll } from '../sync.js';
 
 const YEN = (n) => `¥${n.toLocaleString('ja-JP')}`;
 
@@ -88,6 +89,7 @@ async function saveEdit(sale) {
   }
   const idx = state.sales.findIndex((s) => s.id === sale.id);
   state.sales[idx] = updated;
+  pushAll().catch(() => {});
   editSaving = false;
   closeEdit();
 }
@@ -103,6 +105,7 @@ async function doVoid(sale) {
   }
   const idx = state.sales.findIndex((s) => s.id === sale.id);
   state.sales[idx] = updated;
+  pushAll().catch(() => {});
   closeEdit();
 }
 
