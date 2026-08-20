@@ -1,4 +1,4 @@
-const CACHE = 'natsumatsuri-pos-2026-08-20_1452';
+const CACHE = 'natsumatsuri-pos-2026-08-20_1531';
 const ASSETS = [
   './',
   './index.html',
@@ -27,7 +27,12 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // cache:'reload' でブラウザのHTTPキャッシュを迂回し、必ずサーバーの最新を取り込む
+  e.waitUntil(
+    caches.open(CACHE)
+      .then((c) => Promise.all(ASSETS.map((u) => c.add(new Request(u, { cache: 'reload' })))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (e) => {
@@ -40,7 +45,24 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  // 同期API（Supabase等）はキャッシュ対象外
+  if (url.origin !== self.location.origin) return;
+
+  // ネット優先: オンラインなら常に最新を取り、成功したらキャッシュも更新する。
+  // オフライン・失敗時のみキャッシュから返す（屋台での起動はこれで守られる）。
+  // 旧来のキャッシュ優先は「端末が古い版に固執する」事故を起こしたため廃止（2026-08-20）。
   e.respondWith(
-    caches.match(e.request).then((hit) => hit || fetch(e.request).catch(() => caches.match('./index.html')))
+    fetch(e.request)
+      .then((res) => {
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, copy));
+        }
+        return res;
+      })
+      .catch(() =>
+        caches.match(e.request).then((hit) => hit || caches.match('./index.html'))
+      )
   );
 });
