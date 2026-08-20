@@ -230,3 +230,46 @@ test('editSaleItems: 商品券の枚数を修正できる', () => {
   const e = editSaleItems(s, s.items, '2026-09-18T19:50:00.000Z', { received: null, vouchers: 5 });
   assert.equal(e.vouchers, 5);
 });
+
+// --- 職員販売（2026-08-20 オーナー要望） ---
+
+test('createSale: 通常の会計は現金扱い・職員名なし', () => {
+  const s = createSale({
+    terminal: 'food', seq: 1, received: null, now: '2026-09-18T19:00:00.000Z',
+    items: [{ product_id: 'p1', name: '焼きそば', unit_price: 500, qty: 1 }],
+  });
+  assert.equal(s.payment, 'cash');
+  assert.equal(s.staffName, null);
+});
+
+test('createSale: 職員販売は名前と支払い方法が記録される', () => {
+  const s = createSale({
+    terminal: 'food', seq: 1, received: null, now: '2026-09-18T19:00:00.000Z',
+    staffName: '山田', payment: 'unpaid',
+    items: [{ product_id: 'p1', name: '焼きそば', unit_price: 500, qty: 1 }],
+  });
+  assert.equal(s.staffName, '山田');
+  assert.equal(s.payment, 'unpaid');
+});
+
+test('editSaleItems: 未納をPayPayに回収できる（内容は変えない）', () => {
+  const s = createSale({
+    terminal: 'food', seq: 1, received: null, now: '2026-09-18T19:00:00.000Z',
+    staffName: '山田', payment: 'unpaid',
+    items: [{ product_id: 'p1', name: '焼きそば', unit_price: 500, qty: 1 }],
+  });
+  const e = editSaleItems(s, s.items, '2026-09-18T20:00:00.000Z', { payment: 'paypay' });
+  assert.equal(e.payment, 'paypay');
+  assert.equal(e.staffName, '山田', '名前は維持される');
+  assert.equal(e.total, 500);
+});
+
+test('editSaleItems: paymentを省略すると元の支払い方法を維持', () => {
+  const s = createSale({
+    terminal: 'food', seq: 1, received: null, now: '2026-09-18T19:00:00.000Z',
+    staffName: '山田', payment: 'paypay',
+    items: [{ product_id: 'p1', name: '焼きそば', unit_price: 500, qty: 1 }],
+  });
+  const e = editSaleItems(s, s.items, '2026-09-18T20:00:00.000Z');
+  assert.equal(e.payment, 'paypay');
+});

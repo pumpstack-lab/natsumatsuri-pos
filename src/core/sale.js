@@ -12,7 +12,7 @@ function copyItems(items) {
   }));
 }
 
-export function createSale({ terminal, seq, items, received, now, vouchers = 0 }) {
+export function createSale({ terminal, seq, items, received, now, vouchers = 0, staffName = null, payment = 'cash' }) {
   const copiedItems = copyItems(items);
   const total = cartTotal(copiedItems);
   const { change } = calcChange(total, received, vouchers * VOUCHER_VALUE);
@@ -27,6 +27,8 @@ export function createSale({ terminal, seq, items, received, now, vouchers = 0 }
     received: received ?? null,
     change: received === null || received === undefined ? null : change,
     vouchers,
+    staffName,
+    payment,
     status: 'active',
     edited: false,
     created_at: now,
@@ -42,6 +44,7 @@ export function editSaleItems(sale, newItems, now, options = {}) {
 
   const nextReceived = 'received' in options ? options.received : sale.received;
   const nextVouchers = 'vouchers' in options ? options.vouchers : (sale.vouchers ?? 0);
+  const nextPayment = 'payment' in options ? options.payment : (sale.payment ?? 'cash');
   const { change, shortage } = calcChange(total, nextReceived, nextVouchers * VOUCHER_VALUE);
 
   // 預かり金が合計に足りない場合、その額は現実と食い違っている。
@@ -55,6 +58,7 @@ export function editSaleItems(sale, newItems, now, options = {}) {
     received: keepReceived ? nextReceived : null,
     change: keepReceived ? change : null,
     vouchers: nextVouchers,
+    payment: nextPayment,
     edited: true,
     updated_at: now,
   };

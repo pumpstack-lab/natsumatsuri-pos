@@ -31,3 +31,25 @@ test('tapsTotal: ¥100を4回で¥400', () => {
 test('tapsTotal: 何も押していなければ0', () => {
   assert.equal(tapsTotal(emptyCashTaps()), 0);
 });
+
+// --- 窓口別の金種（2026-08-20 オーナー要望: ドリンクは¥10,000廃止・¥50新設） ---
+import { CASH_UNITS_FOR, ALL_CASH_UNITS } from '../src/core/cash.js';
+
+test('CASH_UNITS_FOR: フードは¥100/¥1,000/¥5,000/¥10,000', () => {
+  assert.deepEqual(CASH_UNITS_FOR('food'), [100, 1000, 5000, 10000]);
+});
+
+test('CASH_UNITS_FOR: ドリンクは¥50/¥100/¥1,000/¥5,000（¥10,000なし）', () => {
+  assert.deepEqual(CASH_UNITS_FOR('drink'), [50, 100, 1000, 5000]);
+});
+
+test('emptyCashTaps: 全窓口の金種をカバーする（窓口切替でキー欠落しない）', () => {
+  const taps = emptyCashTaps();
+  for (const u of ALL_CASH_UNITS) assert.equal(taps[u], 0);
+});
+
+test('tapsTotal: ¥50を3回で¥150', () => {
+  const taps = emptyCashTaps();
+  taps[50] = 3;
+  assert.equal(tapsTotal(taps), 150);
+});

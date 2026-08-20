@@ -360,3 +360,45 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   .cashinfo .pay__recv, .cashinfo .pay__change, .pay__due { padding-top: 6px; padding-bottom: 6px; }
   .pay__done--panel { padding: 12px; margin-top: 6px; }
 }
+
+/* --- モードバー（職員販売・品切れ登録） --- */
+.modebar {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 8px 14px; font-size: 13px; font-weight: 600;
+}
+.modebar--staff { background: #f3efff; color: #6d28d9; border-bottom: 1px solid #c4b5fd; }
+.modebar--soldout { background: #fff1f0; color: #c62828; border-bottom: 1px solid #ffcdd2; }
+.modebar__ok {
+  flex: none; background: #c62828; color: #fff; border-radius: 9px;
+  padding: 9px 22px; font-size: 14px; font-weight: 600; min-height: var(--tap);
+}
+.bar__btn.is-mode { background: #1d1d1f; color: #fff; border-radius: 8px; padding: 6px 10px; }
+
+/* 品切れモードの商品表示 */
+.pbtn--off { opacity: 0.45; }
+.pbtn--off .pbtn__price { color: var(--red); font-weight: 700; }
+.pbtn--flag { border-color: #c62828 !important; border-width: 3px !important; }
+
+/* 職員販売の支払い3ボタン */
+.staffpay { display: flex; gap: 6px; margin-top: 8px; }
+.staffpay__btn {
+  flex: 1; border-radius: 12px; padding: 14px 2px; font-size: 16px; font-weight: 700;
+  min-height: 54px; color: #fff;
+}
+.staffpay__btn--unpaid { background: #e8590c; }
+.staffpay__btn--cash { background: #248a3d; }
+.staffpay__btn--paypay { background: #d32f2f; }
+.staffpay__btn:disabled { opacity: 0.4; }
+
+/* 名前入力フォーム */
+.sheet--center { border-radius: 16px; max-width: 480px; margin: 0 auto auto; margin-top: 12vh; }
+.sheet-bg--center { align-items: flex-start; } /* 名前フォーム専用（履歴の下からシートには影響させない） */
+.field--big { font-size: 22px; padding: 14px; margin: 4px 0 12px; }
+
+/* 職員販売のバッジ類 */
+.tag--staff { background: #6d28d9; }
+.tag--unpaid { background: #e8590c; }
+.tag--paypay { background: #d32f2f; }
+.tag--cash { background: #248a3d; }
+.tabs__chip { flex: 0.7 !important; }
+.staffpay__btn.is-dim { opacity: 0.35; }

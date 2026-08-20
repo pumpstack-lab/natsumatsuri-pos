@@ -20,7 +20,7 @@ const SALES = [
 
 test('detailCsv: ヘッダー行がある', () => {
   const rows = detailCsv(SALES).split('\n');
-  assert.equal(rows[0], '会計ID,顧客番号,窓口,商品名,単価,個数,小計,会計合計,預かり,お釣り,状態,登録時刻,商品券');
+  assert.equal(rows[0], '会計ID,顧客番号,窓口,商品名,単価,個数,小計,会計合計,預かり,お釣り,状態,登録時刻,商品券,支払い,職員名');
 });
 
 test('detailCsv: 1商品につき1行出る', () => {
@@ -57,7 +57,7 @@ test('detailCsv: 商品名にカンマがあっても引用符で囲まれる', 
   }];
   const row = detailCsv(sales).trim().split('\n')[1];
   assert.ok(row.includes('"ドリンク,大"'));
-  assert.equal(row.split(',').length, 14);
+  assert.equal(row.split(',').length, 16);
 });
 
 test('detailCsv: 商品名に引用符があっても二重化される', () => {
@@ -117,8 +117,8 @@ test('detailCsv: 商品券の枚数が末尾列に出る', () => {
     items: [{ product_id: 'p1', name: '焼きそば', unit_price: 500, qty: 2 }],
   }];
   const rows = detailCsv(sales).trim().split('\n');
-  assert.ok(rows[0].endsWith(',商品券'), 'ヘッダー末尾に商品券列');
-  assert.ok(rows[1].endsWith(',3'), 'データ行の末尾に枚数');
+  assert.equal(rows[0].split(',')[12], '商品券', '13列目が商品券');
+  assert.equal(rows[1].split(',')[12], '3', 'データ行の13列目に枚数');
 });
 
 test('detailCsv: 商品券0枚は空欄になる', () => {
@@ -127,7 +127,7 @@ test('detailCsv: 商品券0枚は空欄になる', () => {
     status: 'active', edited: false, created_at: '2026-09-18T10:00:00.000Z',
     items: [{ product_id: 'p1', name: '焼きそば', unit_price: 500, qty: 1 }],
   }];
-  assert.ok(detailCsv(sales).trim().split('\n')[1].endsWith(','), '0枚は空欄');
+  assert.equal(detailCsv(sales).trim().split('\n')[1].split(',')[12], '', '0枚は空欄');
 });
 
 test('detailCsv: 状態列の位置は変わらない（既存の集計手順を壊さない）', () => {
@@ -138,4 +138,36 @@ test('detailCsv: 状態列の位置は変わらない（既存の集計手順を
   }];
   const row = detailCsv(sales).trim().split('\n')[1];
   assert.equal(row.split(',')[10], '有効', '状態は11列目(K列)のまま');
+});
+
+test('detailCsv: 支払い方法と職員名が末尾列に出る', () => {
+  const sales = [{
+    id: 'x', terminal: 'food', seq: 1, total: 500, received: null, change: null, vouchers: 0,
+    staffName: '山田', payment: 'paypay',
+    status: 'active', edited: false, created_at: '2026-09-18T10:00:00.000Z',
+    items: [{ product_id: 'p1', name: '焼きそば', unit_price: 500, qty: 1 }],
+  }];
+  const rows = detailCsv(sales).trim().split('\n');
+  assert.ok(rows[0].endsWith(',支払い,職員名'), 'ヘッダー: ' + rows[0]);
+  assert.ok(rows[1].endsWith(',PayPay,山田'), 'データ: ' + rows[1]);
+});
+
+test('detailCsv: 通常の会計は支払い=現金・職員名は空欄', () => {
+  const sales = [{
+    id: 'x', terminal: 'food', seq: 1, total: 500, received: null, change: null, vouchers: 0,
+    status: 'active', edited: false, created_at: '2026-09-18T10:00:00.000Z',
+    items: [{ product_id: 'p1', name: '焼きそば', unit_price: 500, qty: 1 }],
+  }];
+  const row = detailCsv(sales).trim().split('\n')[1];
+  assert.ok(row.endsWith(',現金,'), row);
+});
+
+test('detailCsv: 状態列(K列)の位置は今回も変わらない', () => {
+  const sales = [{
+    id: 'x', terminal: 'food', seq: 1, total: 500, received: null, change: null, vouchers: 0,
+    staffName: '山田', payment: 'unpaid',
+    status: 'active', edited: false, created_at: '2026-09-18T10:00:00.000Z',
+    items: [{ product_id: 'p1', name: '焼きそば', unit_price: 500, qty: 1 }],
+  }];
+  assert.equal(detailCsv(sales).trim().split('\n')[1].split(',')[10], '有効');
 });

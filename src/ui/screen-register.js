@@ -1,9 +1,10 @@
 import { esc } from './escape.js';
 import { state, go, render, resetCart, nextSeq } from './state.js';
 import { availableProducts } from '../core/products.js';
+import { putProducts } from '../db.js';
 import { cartTotal, calcChange } from '../core/money.js';
 import { createSale, voidSale } from '../core/sale.js';
-import { CASH_UNITS, emptyCashTaps, tapsTotal, VOUCHER_VALUE } from '../core/cash.js';
+import { CASH_UNITS_FOR, emptyCashTaps, tapsTotal, VOUCHER_VALUE } from '../core/cash.js';
 import { putSale } from '../db.js';
 
 const YEN = (n) => `¥${n.toLocaleString('ja-JP')}`;
@@ -90,6 +91,90 @@ async function complete() {
   render();
 }
 
+// ===== 職員販売モード =====
+// staffName が入っている間は職員販売として登録される。
+let staffNameInput = '';   // 名前入力フォームの一時値（フォーム表示中のみ使用）
+
+function startStaffMode() {
+  if (state.staffMode) {
+    // もう一度押したら解除（伝票は残す）
+    state.staffMode = false;
+    state.staffName = '';
+    render();
+    return;
+  }
+  state.staffNameFormOpen = true;
+  render();
+}
+
+async function completeStaff(payment) {
+  if (saving) return;
+  const total = cartTotal(state.cart);
+  if (total <= 0) return;
+  saving = true;
+
+  const sale = createSale({
+    terminal: state.terminal,
+    seq: nextSeq(state.terminal),
+    items: state.cart,
+    received: null,
+    vouchers: 0,
+    staffName: state.staffName,
+    payment,
+    now: new Date().toISOString(),
+  });
+  try {
+    await putSale(sale);
+  } catch (e) {
+    saving = false;
+    alert('保存できませんでした。もう一度お試しください。');
+    return;
+  }
+  state.sales.unshift(sale);
+  const label = payment === 'unpaid' ? '未納' : payment === 'paypay' ? 'PayPay' : '現金';
+  showToast(`職員販売（${state.staffName}・${label}）${YEN(sale.total)} を登録しました`);
+  resetCart();
+  state.staffMode = false;
+  state.staffName = '';
+  saving = false;
+  render();
+}
+
+// ===== 品切れ登録モード =====
+// 商品をタップで選択し「確定」で is_available を反転させる。
+// 品切れ済みの商品も表示するので、間違えた時はここから戻せる。
+let soldoutDraft = null;   // { productId: bool } 反転させる対象
+
+function startSoldoutMode() {
+  if (state.soldoutMode) {
+    state.soldoutMode = false;
+    soldoutDraft = null;
+    render();
+    return;
+  }
+  state.soldoutMode = true;
+  soldoutDraft = {};
+  render();
+}
+
+async function confirmSoldout() {
+  const ids = Object.keys(soldoutDraft).filter((id) => soldoutDraft[id]);
+  for (const id of ids) {
+    const prod = state.products.find((x) => x.id === id);
+    if (prod) prod.is_available = !prod.is_available;
+  }
+  if (ids.length > 0) {
+    try {
+      await putProducts(state.products);
+    } catch (e) {
+      alert('品切れ状態を保存できませんでした。もう一度お試しください。');
+    }
+  }
+  state.soldoutMode = false;
+  soldoutDraft = null;
+  render();
+}
+
 // 誤って支払い完了した直前の会計を取り消し、内容を編集中の伝票に復元する。
 // 取消レコードは履歴に残す（集計の追跡可能性を守る・本ツール共通の方針）。
 async function undoLast() {
@@ -150,32 +235,57 @@ export function renderRegister() {
   el.className = 'screen';
 
   const products = availableProducts(state.products, state.terminal);
+  const allProducts = state.products
+    .filter((x) => x.terminal === state.terminal)
+    .sort((a, b) => a.sort_order - b.sort_order);
   const total = cartTotal(state.cart);
   const received = receivedTotal();
   const voucherAmount = state.vouchers * VOUCHER_VALUE;
   const { change, shortage, canComplete, cashDue } = calcChange(total, received, voucherAmount);
   const label = state.terminal === 'food' ? '🍔 フード' : '🥤 ドリンク';
   const seq = nextSeq(state.terminal);
+  const units = CASH_UNITS_FOR(state.terminal);
 
   el.innerHTML = `
     <div class="bar">
       <button class="bar__btn" data-go="top">‹ トップ</button>
       <span class="bar__title">${label}</span>
       <span class="bar__actions">
+        <button class="bar__btn ${state.staffMode ? 'is-mode' : ''}" data-staff>👤 職員販売${state.staffMode ? `:${esc(state.staffName)}` : ''}</button>
+        <button class="bar__btn ${state.soldoutMode ? 'is-mode' : ''}" data-soldout>🚫 品切れ</button>
         <button class="bar__btn" data-undo>↩ 直前を修正</button>
         <button class="bar__btn" data-go2="history">📋 履歴・集計</button>
         <span class="bar__seq">顧客 ${seq}組目</span>
       </span>
     </div>
     <div class="reg">
-      <div class="reg__grid ${products.length > 6 ? 'reg__grid--dense' : ''}">
-        ${products.map((p) => `
-          <button class="pbtn pbtn--${state.terminal}" data-add="${esc(p.id)}">
-            <span class="pbtn__name">${esc(p.name)}</span>
-            <span class="pbtn__price">${YEN(p.price)}</span>
-          </button>
-        `).join('')}
-      </div>
+      ${state.soldoutMode ? `
+        <div class="modebar modebar--soldout">
+          <span>🚫 品切れ登録: 切り替える商品をタップして「確定」を押してください（品切れ中の商品を押すと復活します）</span>
+          <button class="modebar__ok" data-soldout-ok>確定</button>
+        </div>
+        <div class="reg__grid ${allProducts.length > 6 ? 'reg__grid--dense' : ''}">
+          ${allProducts.map((p) => {
+            const flagged = soldoutDraft && soldoutDraft[p.id];
+            const willBeOff = flagged ? p.is_available : !p.is_available;
+            return `
+            <button class="pbtn pbtn--${state.terminal} ${willBeOff ? 'pbtn--off' : ''} ${flagged ? 'pbtn--flag' : ''}" data-flag="${esc(p.id)}">
+              <span class="pbtn__name">${esc(p.name)}</span>
+              <span class="pbtn__price">${willBeOff ? '品切れ' : YEN(p.price)}</span>
+            </button>`;
+          }).join('')}
+        </div>
+      ` : `
+        ${state.staffMode ? `<div class="modebar modebar--staff"><span>👤 職員販売: ${esc(state.staffName)} さん — 商品を選んで下の支払い方法を押してください</span></div>` : ''}
+        <div class="reg__grid ${products.length > 6 ? 'reg__grid--dense' : ''}">
+          ${products.map((p) => `
+            <button class="pbtn pbtn--${state.terminal}" data-add="${esc(p.id)}">
+              <span class="pbtn__name">${esc(p.name)}</span>
+              <span class="pbtn__price">${YEN(p.price)}</span>
+            </button>
+          `).join('')}
+        </div>
+      `}
       <div class="lower">
         <div class="lower__left">
           <div class="cart__list">
@@ -203,12 +313,10 @@ export function renderRegister() {
                （連打時に1回目でボタンがずれて2回目が空振りするストレスを解消・2026-08-19 オーナー指摘） -->
           <div class="cashcol">
             <div class="cashcol__row">
-              <button data-cash="100" class="${state.cashTaps[100] > 0 ? 'is-on' : ''}">¥100${state.cashTaps[100] > 0 ? `<small>×${state.cashTaps[100]}</small>` : ''}</button>
-              <button data-cash="1000" class="${state.cashTaps[1000] > 0 ? 'is-on' : ''}">¥1,000${state.cashTaps[1000] > 0 ? `<small>×${state.cashTaps[1000]}</small>` : ''}</button>
+              ${units.slice(0, 2).map((u) => `<button data-cash="${u}" class="${state.cashTaps[u] > 0 ? 'is-on' : ''}">${YEN(u)}${state.cashTaps[u] > 0 ? `<small>×${state.cashTaps[u]}</small>` : ''}</button>`).join('')}
             </div>
             <div class="cashcol__row">
-              <button data-cash="5000" class="${state.cashTaps[5000] > 0 ? 'is-on' : ''}">¥5,000${state.cashTaps[5000] > 0 ? `<small>×${state.cashTaps[5000]}</small>` : ''}</button>
-              <button data-cash="10000" class="${state.cashTaps[10000] > 0 ? 'is-on' : ''}">¥10,000${state.cashTaps[10000] > 0 ? `<small>×${state.cashTaps[10000]}</small>` : ''}</button>
+              ${units.slice(2, 4).map((u) => `<button data-cash="${u}" class="${state.cashTaps[u] > 0 ? 'is-on' : ''}">${YEN(u)}${state.cashTaps[u] > 0 ? `<small>×${state.cashTaps[u]}</small>` : ''}</button>`).join('')}
             </div>
             <div class="cashcol__row">
               <button data-voucher class="cashcol__voucher ${state.vouchers > 0 ? 'is-on' : ''}">商品券${state.vouchers > 0 ? `<small>×${state.vouchers}</small>` : `<small>${YEN(VOUCHER_VALUE)}</small>`}</button>
@@ -236,15 +344,85 @@ export function renderRegister() {
               <strong>${received === null ? '—' : YEN(shortage > 0 ? shortage : change)}</strong>
             </div>
           </div>
-          <button class="pay__done pay__done--panel" data-done ${canComplete ? '' : 'disabled'}>支払い完了</button>
+          ${state.staffMode ? `
+            <div class="staffpay">
+              <button class="staffpay__btn staffpay__btn--unpaid" data-staffpay="unpaid" ${total > 0 ? '' : 'disabled'}>未納</button>
+              <button class="staffpay__btn staffpay__btn--cash" data-staffpay="cash" ${total > 0 ? '' : 'disabled'}>現金</button>
+              <button class="staffpay__btn staffpay__btn--paypay" data-staffpay="paypay" ${total > 0 ? '' : 'disabled'}>PayPay</button>
+            </div>
+          ` : `
+            <button class="pay__done pay__done--panel" data-done ${canComplete ? '' : 'disabled'}>支払い完了</button>
+          `}
         </div>
       </div>
       ${state.keypadOpen ? keypadHtml() : ''}
+      ${state.staffNameFormOpen ? `
+        <div class="sheet-bg sheet-bg--center" data-staff-bg>
+          <div class="sheet sheet--center">
+            <div class="sheet__head">
+              <span class="sheet__title">職員販売 — お名前を入力</span>
+              <button class="bar__btn" data-staff-cancel>キャンセル</button>
+            </div>
+            <input class="field field--big" data-staff-name type="text" placeholder="例: 山田" autocomplete="off">
+            <button class="btn-primary" data-staff-start>この名前ではじめる</button>
+          </div>
+        </div>
+      ` : ''}
     </div>
   `;
 
   el.querySelector('[data-go="top"]').addEventListener('click', () => go('top'));
   el.querySelector('[data-undo]').addEventListener('click', undoLast);
+  el.querySelector('[data-staff]').addEventListener('click', startStaffMode);
+  el.querySelector('[data-soldout]').addEventListener('click', startSoldoutMode);
+
+  // 品切れモード: 商品タップで反転フラグをトグル
+  el.querySelectorAll('[data-flag]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.flag;
+      soldoutDraft[id] = !soldoutDraft[id];
+      render();
+    });
+  });
+  const soldoutOk = el.querySelector('[data-soldout-ok]');
+  if (soldoutOk) soldoutOk.addEventListener('click', confirmSoldout);
+
+  // 職員販売: 名前フォーム
+  const staffInput = el.querySelector('[data-staff-name]');
+  if (staffInput) {
+    staffInput.value = staffNameInput;
+    staffInput.focus();
+    staffInput.addEventListener('input', () => { staffNameInput = staffInput.value; });
+    const startStaff = () => {
+      const name = staffInput.value.trim();
+      if (!name) { alert('お名前を入力してください。'); return; }
+      state.staffName = name;
+      state.staffMode = true;
+      state.staffNameFormOpen = false;
+      staffNameInput = '';
+      render();
+    };
+    // エンターで確定してフォームを閉じる（オーナー指定）
+    staffInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') startStaff(); });
+    el.querySelector('[data-staff-start]').addEventListener('click', startStaff);
+    el.querySelector('[data-staff-cancel]').addEventListener('click', () => {
+      state.staffNameFormOpen = false;
+      staffNameInput = '';
+      render();
+    });
+    el.querySelector('[data-staff-bg]').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        state.staffNameFormOpen = false;
+        staffNameInput = '';
+        render();
+      }
+    });
+  }
+
+  // 職員販売の支払い3ボタン
+  el.querySelectorAll('[data-staffpay]').forEach((btn) => {
+    btn.addEventListener('click', () => completeStaff(btn.dataset.staffpay));
+  });
   el.querySelector('[data-go2]').addEventListener('click', () => go('history'));
   el.querySelectorAll('[data-add]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -288,7 +466,8 @@ export function renderRegister() {
       render();
     });
   });
-  el.querySelector('[data-done]').addEventListener('click', complete);
+  const doneBtn = el.querySelector('[data-done]');
+  if (doneBtn) doneBtn.addEventListener('click', complete);  // 職員モード中は3分割ボタンに置き換わり存在しない
 
   return el;
 }

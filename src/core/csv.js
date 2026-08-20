@@ -2,6 +2,7 @@ export const BOM = '﻿';
 
 const TERMINAL_LABEL = { food: 'フード', drink: 'ドリンク' };
 const STATUS_LABEL = { active: '有効', voided: '取消' };
+const PAYMENT_LABEL = { cash: '現金', paypay: 'PayPay', unpaid: '未納' };
 
 function escapeCell(value) {
   let s = value === null || value === undefined ? '' : String(value);
@@ -32,7 +33,7 @@ function localTime(iso) {
 export function detailCsv(sales) {
   const header = toRow([
     '会計ID', '顧客番号', '窓口', '商品名', '単価', '個数', '小計',
-    '会計合計', '預かり', 'お釣り', '状態', '登録時刻', '商品券',
+    '会計合計', '預かり', 'お釣り', '状態', '登録時刻', '商品券', '支払い', '職員名',
   ]);
   const rows = [];
   for (const s of sales) {
@@ -43,6 +44,8 @@ export function detailCsv(sales) {
         s.total, s.received, s.change,
         STATUS_LABEL[s.status] ?? s.status, localTime(s.created_at),
         (s.vouchers ?? 0) > 0 ? s.vouchers : '',
+        PAYMENT_LABEL[s.payment ?? 'cash'],
+        s.staffName ?? '',
       ]));
     }
   }
@@ -51,7 +54,7 @@ export function detailCsv(sales) {
 
 export function summaryCsv(sales) {
   const header = toRow([
-    '顧客番号', '窓口', '商品内訳', '合計', '預かり', 'お釣り', '状態', '登録時刻', '商品券',
+    '顧客番号', '窓口', '商品内訳', '合計', '預かり', 'お釣り', '状態', '登録時刻', '商品券', '支払い', '職員名',
   ]);
   const rows = sales.map((s) => toRow([
     s.seq, TERMINAL_LABEL[s.terminal] ?? s.terminal,
@@ -59,6 +62,8 @@ export function summaryCsv(sales) {
     s.total, s.received, s.change,
     STATUS_LABEL[s.status] ?? s.status, localTime(s.created_at),
     (s.vouchers ?? 0) > 0 ? s.vouchers : '',
+    PAYMENT_LABEL[s.payment ?? 'cash'],
+    s.staffName ?? '',
   ]));
   return [header, ...rows].join('\n') + '\n';
 }

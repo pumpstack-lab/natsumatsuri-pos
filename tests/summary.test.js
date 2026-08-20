@@ -77,3 +77,22 @@ test('summarize: 商品券の使用枚数を合計する（取消は除外）', 
   ];
   assert.equal(summarize(sales).voucherCount, 5, '有効な会計の3+2枚。取消の4枚と未定義は除外');
 });
+
+test('summarize: PayPayの合計額を出す（取消は除外）', () => {
+  const sales = [
+    { id: 'a', total: 500, status: 'active', payment: 'paypay', items: [] },
+    { id: 'b', total: 300, status: 'active', payment: 'cash', items: [] },
+    { id: 'c', total: 200, status: 'active', payment: 'paypay', items: [] },
+    { id: 'd', total: 900, status: 'voided', payment: 'paypay', items: [] },
+    { id: 'e', total: 100, status: 'active', items: [] },
+  ];
+  assert.equal(summarize(sales).paypayTotal, 700);
+});
+
+test('summarize: 未納の合計額も出す', () => {
+  const sales = [
+    { id: 'a', total: 500, status: 'active', payment: 'unpaid', items: [] },
+    { id: 'b', total: 300, status: 'active', payment: 'cash', items: [] },
+  ];
+  assert.equal(summarize(sales).unpaidTotal, 500);
+});

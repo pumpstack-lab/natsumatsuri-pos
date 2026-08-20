@@ -14,6 +14,14 @@ function mySales() {
   return state.sales.filter((s) => s.terminal === state.terminal);
 }
 
+function payBadge(s) {
+  const pay = s.payment ?? 'cash';
+  if (pay === 'unpaid') return '<span class="tag tag--unpaid">未納</span>';
+  if (pay === 'paypay') return '<span class="tag tag--paypay">PayPay</span>';
+  if (s.staffName) return '<span class="tag tag--cash">現金</span>';
+  return '';
+}
+
 function hhmm(iso) {
   const d = new Date(iso);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -23,6 +31,8 @@ let draft = null;
 let draftReceived = null;   // 修正中の預かり金（null = 記録なし）
 let draftTaps = null;       // 金額ボタンのタップ回数
 let draftVouchers = 0;      // 修正中の商品券の枚数
+let draftPayment = 'cash';  // 修正中の支払い方法
+let staffOnly = false;      // 職員販売のみ表示フィルタ
 
 function openEdit(sale) {
   state.editingSaleId = sale.id;
@@ -30,6 +40,7 @@ function openEdit(sale) {
   draftReceived = sale.received;
   draftTaps = emptyCashTaps();
   draftVouchers = sale.vouchers ?? 0;
+  draftPayment = sale.payment ?? 'cash';
   render();
 }
 
@@ -67,7 +78,7 @@ async function saveEdit(sale) {
     return;
   }
   editSaving = true;
-  const updated = editSaleItems(sale, items, new Date().toISOString(), { received: draftReceived, vouchers: draftVouchers });
+  const updated = editSaleItems(sale, items, new Date().toISOString(), { received: draftReceived, vouchers: draftVouchers, payment: draftPayment });
   try {
     await putSale(updated);
   } catch (e) {
@@ -96,6 +107,7 @@ async function doVoid(sale) {
 }
 
 function sheetHtml(sale) {
+  const editingIsStaff = !!sale.staffName;
   const total = cartTotal(draft.filter((i) => i.qty > 0));
   const { change, shortage, cashDue } = calcChange(total, draftReceived, draftVouchers * VOUCHER_VALUE);
   const addable = availableProducts(state.products, state.terminal)
@@ -145,6 +157,14 @@ function sheetHtml(sale) {
               <button data-eclear class="cashcol__clear">クリア</button>
             </div>
           </div>
+          ${editingIsStaff ? `
+            <div class="sheet__cash-label" style="margin-top:12px">支払い方法（${esc(sale.staffName)} さん）</div>
+            <div class="staffpay">
+              <button class="staffpay__btn staffpay__btn--unpaid ${draftPayment === 'unpaid' ? '' : 'is-dim'}" data-epay="unpaid">未納${draftPayment === 'unpaid' ? ' ✓' : ''}</button>
+              <button class="staffpay__btn staffpay__btn--cash ${draftPayment === 'cash' ? '' : 'is-dim'}" data-epay="cash">現金${draftPayment === 'cash' ? ' ✓' : ''}</button>
+              <button class="staffpay__btn staffpay__btn--paypay ${draftPayment === 'paypay' ? '' : 'is-dim'}" data-epay="paypay">PayPay${draftPayment === 'paypay' ? ' ✓' : ''}</button>
+            </div>
+          ` : ''}
           <div class="cashinfo">
             ${draftVouchers > 0 ? `
               <div class="pay__voucher">
@@ -185,6 +205,7 @@ export function renderHistory() {
   const label = state.terminal === 'food' ? '🍔 フード窓口' : '🥤 ドリンク窓口';
   const editing = state.editingSaleId ? sales.find((s) => s.id === state.editingSaleId) : null;
   const breakdown = productBreakdown(sales);
+  const listSales = staffOnly ? sales.filter((s) => s.staffName) : sales;
 
   el.innerHTML = `
     <div class="bar">
@@ -212,18 +233,23 @@ export function renderHistory() {
         <div class="kpi__label">商品券</div>
         <div class="kpi__value">${sum.voucherCount}<span style="font-size:13px;font-weight:600;color:var(--gray)">枚</span></div>
       </div>
+      <div class="kpi__box">
+        <div class="kpi__label">PayPay</div>
+        <div class="kpi__value">${YEN(sum.paypayTotal)}</div>
+      </div>
     </div>
     <div class="tabs">
       <button data-tab="list" class="${state.historyTab === 'list' ? 'is-on' : ''}">会計履歴</button>
       <button data-tab="product" class="${state.historyTab === 'product' ? 'is-on' : ''}">商品別集計</button>
+      <button data-stafffilter class="tabs__chip ${staffOnly ? 'is-on' : ''}">👤 職員のみ${staffOnly ? ' ✓' : ''}</button>
     </div>
     <div class="scroll">
       ${state.historyTab === 'list' ? `
         <div class="recs">
-          ${sales.length === 0 ? '<div class="cart__empty">まだ会計がありません</div>' : sales.map((s) => `
+          ${listSales.length === 0 ? '<div class="cart__empty">まだ会計がありません</div>' : listSales.map((s) => `
             <button class="rec ${s.status === 'voided' ? 'rec--void' : s.edited ? 'rec--edited' : ''}" data-edit="${s.id}">
               <div class="rec__head">
-                <span class="rec__no">顧客 ${s.seq}${s.status === 'voided' ? '<span class="tag tag--void">取消</span>' : s.edited ? '<span class="tag">修正済</span>' : ''}</span>
+                <span class="rec__no">顧客 ${s.seq}${s.staffName ? `<span class="tag tag--staff">👤 ${esc(s.staffName)}</span>` : ''}${payBadge(s)}${s.status === 'voided' ? '<span class="tag tag--void">取消</span>' : s.edited ? '<span class="tag">修正済</span>' : ''}</span>
                 <span class="rec__amount">${YEN(s.total)}</span>
               </div>
               <div class="rec__body">
@@ -260,8 +286,13 @@ export function renderHistory() {
     state.historyTab = b.dataset.tab;
     render();
   }));
+  el.querySelector('[data-stafffilter]').addEventListener('click', () => {
+    staffOnly = !staffOnly;
+    state.historyTab = 'list';
+    render();
+  });
   el.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => {
-    const s = sales.find((x) => x.id === b.dataset.edit);
+    const s = listSales.find((x) => x.id === b.dataset.edit);
     if (s && s.status === 'active') openEdit(s);
     else if (s) alert('取消済みの会計は編集できません。');
   }));
@@ -291,6 +322,10 @@ export function renderHistory() {
       }
     });
     el.querySelectorAll('[data-ecash]').forEach((b) => b.addEventListener('click', () => tapEditCash(Number(b.dataset.ecash))));
+    el.querySelectorAll('[data-epay]').forEach((b) => b.addEventListener('click', () => {
+      draftPayment = b.dataset.epay;
+      render();
+    }));
     el.querySelector('[data-evoucher]').addEventListener('click', () => {
       draftVouchers += 1;
       render();

@@ -8,7 +8,9 @@ export function summarize(sales) {
   const count = active.length;
   const average = count === 0 ? 0 : Math.round(totalSales / count);
   const voucherCount = active.reduce((sum, s) => sum + (s.vouchers ?? 0), 0);
-  return { totalSales, count, average, voucherCount };
+  const paypayTotal = active.filter((s) => s.payment === 'paypay').reduce((sum, s) => sum + s.total, 0);
+  const unpaidTotal = active.filter((s) => s.payment === 'unpaid').reduce((sum, s) => sum + s.total, 0);
+  return { totalSales, count, average, voucherCount, paypayTotal, unpaidTotal };
 }
 
 export function productBreakdown(sales) {
