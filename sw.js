@@ -1,4 +1,4 @@
-const CACHE = 'natsumatsuri-pos-2026-08-20_1531';
+const CACHE = 'natsumatsuri-pos-2026-08-20_1558';
 const ASSETS = [
   './',
   './index.html',
@@ -17,6 +17,8 @@ const ASSETS = [
   './src/ui/state.js',
   './src/ui/screen-merged.js',
   './src/core/syncrow.js',
+  './src/core/xlsx.js',
+  './src/core/exportsheets.js',
   './src/sync.js',
   './src/ui/escape.js',
   './src/ui/screen-top.js',
