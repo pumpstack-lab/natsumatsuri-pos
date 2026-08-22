@@ -1,6 +1,6 @@
 -- 夏祭りレジツール: 合算履歴用テーブル（2026-08-20）
--- 対象プロジェクト: vqeoutrlvdydxenaspas（旧・売上集計ツール用の独立プロジェクト）
--- ⚠️ CareStack系のDB（個人情報あり）には絶対に入れないこと。
+-- 対象プロジェクト: natsumatsuri (mwtbfyojclzdlfftrvhy) — 祭り専用の空プロジェクト
+-- ⚠️ CareStack本番DB (vqeoutrlvdydxenaspas) には絶対に入れないこと（residents/staff/reports 等の要配慮個人情報を持つ）。
 -- 実行方法: Supabaseダッシュボード → SQL Editor → 全文貼り付け → Run
 
 create table if not exists public.nm_sales (

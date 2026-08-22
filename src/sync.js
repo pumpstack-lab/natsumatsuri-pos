@@ -4,7 +4,7 @@
 import { getMeta, setMeta, getAllSales } from './db.js';
 import { toRow, fromRow } from './core/syncrow.js';
 
-export const SYNC_URL = 'https://vqeoutrlvdydxenaspas.supabase.co';
+export const SYNC_URL = 'https://mwtbfyojclzdlfftrvhy.supabase.co';
 
 export async function getSyncKey() {
   return getMeta('sync_key', null);
