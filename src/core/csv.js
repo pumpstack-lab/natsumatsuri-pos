@@ -71,5 +71,5 @@ export function summaryCsv(sales) {
 export function csvFileName(terminal, kind, date) {
   const pad = (n) => String(n).padStart(2, '0');
   const stamp = `${pad(date.getMonth() + 1)}${pad(date.getDate())}_${pad(date.getHours())}${pad(date.getMinutes())}`;
-  return `natsumatsuri_${terminal}_${kind}_${stamp}.csv`;
+  return `komoreji_${terminal}_${kind}_${stamp}.csv`;
 }

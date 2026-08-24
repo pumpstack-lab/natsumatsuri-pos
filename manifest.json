@@ -1,10 +1,21 @@
 {
-  "name": "夏祭りレジ",
-  "short_name": "夏祭りレジ",
+  "name": "こもれじ",
+  "short_name": "こもれじ",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "landscape",
-  "background_color": "#f5f5f7",
-  "theme_color": "#1d1d1f",
-  "icons": []
+  "background_color": "#ffffff",
+  "theme_color": "#29abd6",
+  "icons": [
+    { "src": "./icons/icon-96.png",   "sizes": "96x96",     "type": "image/png" },
+    { "src": "./icons/icon-120.png",  "sizes": "120x120",   "type": "image/png" },
+    { "src": "./icons/icon-144.png",  "sizes": "144x144",   "type": "image/png" },
+    { "src": "./icons/icon-152.png",  "sizes": "152x152",   "type": "image/png" },
+    { "src": "./icons/icon-167.png",  "sizes": "167x167",   "type": "image/png" },
+    { "src": "./icons/icon-180.png",  "sizes": "180x180",   "type": "image/png" },
+    { "src": "./icons/icon-192.png",  "sizes": "192x192",   "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-384.png",  "sizes": "384x384",   "type": "image/png" },
+    { "src": "./icons/icon-512.png",  "sizes": "512x512",   "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-1024.png", "sizes": "1024x1024", "type": "image/png" }
+  ]
 }

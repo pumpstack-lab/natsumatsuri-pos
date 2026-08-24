@@ -51,5 +51,5 @@ export function summarySheet(sales) {
 
 export function xlsxFileName(terminal, date) {
   const pad = (n) => String(n).padStart(2, '0');
-  return `natsumatsuri_${terminal}_${pad(date.getMonth() + 1)}${pad(date.getDate())}_${pad(date.getHours())}${pad(date.getMinutes())}.xlsx`;
+  return `komoreji_${terminal}_${pad(date.getMonth() + 1)}${pad(date.getDate())}_${pad(date.getHours())}${pad(date.getMinutes())}.xlsx`;
 }

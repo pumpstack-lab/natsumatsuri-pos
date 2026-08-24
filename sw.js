@@ -1,10 +1,20 @@
-const CACHE = 'natsumatsuri-pos-2026-08-22_1507';
+const CACHE = 'komoreji-pos-2026-08-24_1135';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
   './manifest.json',
-  './favicon.svg',
+  './icons/icon-96.png',
+  './icons/icon-120.png',
+  './icons/icon-144.png',
+  './icons/icon-152.png',
+  './icons/icon-167.png',
+  './icons/icon-180.png',
+  './icons/icon-192.png',
+  './icons/icon-384.png',
+  './icons/icon-512.png',
+  './icons/icon-1024.png',
+  './icons/icon-32.png',
   './src/app.js',
   './src/version.js',
   './src/db.js',

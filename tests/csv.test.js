@@ -82,7 +82,7 @@ test('summaryCsv: 商品内訳が読める形で入る', () => {
 
 test('csvFileName: 窓口と日付が入る', () => {
   const name = csvFileName('food', 'detail', new Date('2026-09-18T10:00:00.000Z'));
-  assert.ok(name.startsWith('natsumatsuri_food_detail_'));
+  assert.ok(name.startsWith('komoreji_food_detail_'));
   assert.ok(name.endsWith('.csv'));
 });
 

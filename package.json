@@ -1,7 +1,7 @@
 {
   "name": "natsumatsuri-pos",
   "version": "1.0.0",
-  "description": "夏祭り屋台レジツール（完全オフラインPWA）",
+  "description": "こもれじ — 屋台・店舗向けレジツール（完全オフラインPWA）",
   "type": "module",
   "scripts": {
     "test": "node --test \"tests/**/*.test.js\"",

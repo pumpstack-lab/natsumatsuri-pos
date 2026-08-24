@@ -56,7 +56,7 @@ export function renderTop() {
       <div class="top__menu">
         <button data-go="history">📋 履歴・集計</button>
         <button data-go="products">🍳 商品の設定</button>
-        <button data-go="export">📤 CSV書き出し</button>
+        <button data-go="export">📤 Excel書き出し</button>
         <button data-merged>🌐 合算履歴</button>
       </div>
       <div class="top__ver">ver ${BUILD}</div>
