@@ -17,6 +17,7 @@
 
 html, body {
   height: 100%;
+  height: 100dvh;   /* iOS SafariのURLバー伸縮による高さ誤差を吸収（100%はフォールバック） */
   font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
   color: var(--ink);
   background: var(--bg);
@@ -25,9 +26,19 @@ html, body {
 
 button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
 
-#app { height: 100%; display: flex; flex-direction: column; }
+#app { height: 100%; height: 100dvh; display: flex; flex-direction: column; }
 
-.screen { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+.screen {
+  height: 100%; display: flex; flex-direction: column; overflow: hidden;
+  /* standalone(ホーム画面起動)ではステータスバー/ホームインジケータの下まで
+     表示領域が広がる。補正しないと最下部の「支払い完了」が画面外に潜り、
+     .screen が overflow:hidden のためスクロールでも救出できない（2026-08-24 実機で発覚）。
+     デスクトップbrowserでは env が 0 になるため、この不具合は再現しない。 */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
 
 .bar {
   flex: none;
@@ -361,6 +372,73 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   .pay__done--panel { padding: 12px; margin-top: 6px; }
 }
 
+/* さらに画面が低い端末（法人iPad実機=縦620px前後で「支払い完了」が画面外に出た。2026-08-24）。
+   金種エリアはスクロールさせない（暗所の連打中に指が滑ると次のタップが別の金種に当たり
+   現金がズレるため・設計思想）。代わりに商品エリアの上限を絞って縦を空ける。
+   商品が入りきらない分は商品エリア内のスクロールで到達できる。 */
+@media (max-height: 700px) and (min-width: 621px) {
+  /* ドリンク10品=4列3行が「切れずに全部見える」ことを最優先にする。
+     3行分(54px*3 + gap6px*2 + padding12px)を確保できる高さを下限に置く。
+     商品を探してスクロールするのは、完了ボタンが押せないのと同じくらい会計を止める。 */
+  /* 10品なら 54*3+gap12+padding12 = 186px < 34vh(210px@620) で全表示を維持しつつ、
+     当日に商品を足した時・品切れモードで全品出た時だけスクロールに逃がす（ネイト指摘）。 */
+  .reg__grid { max-height: 34vh; min-height: 0; padding: 6px 10px; gap: 6px; flex: 0 1 auto; overflow-y: auto; }
+  .reg__grid--dense .pbtn { min-height: 54px; padding: 7px 4px; }
+  .reg__grid--dense .pbtn__name { font-size: 16px; }
+  .reg__grid--dense .pbtn__price { font-size: 13px; margin-top: 1px; }
+  .bar { padding-top: 6px; padding-bottom: 6px; }
+  .cashcol__row button, .voucher-mini { height: 40px; }
+  .cashinfo .pay__recv strong { font-size: 21px; }
+  .cashinfo .pay__change strong { font-size: 25px; }
+  .pay__done--panel { padding: 11px; min-height: 48px; }
+}
+
+/* 極端に低い場合（分割表示など）の最終防衛。ここでも完了ボタンは必ず画面内に置く。 */
+@media (max-height: 600px) and (min-width: 621px) {
+  .reg__grid--dense .pbtn { min-height: 46px; padding: 5px 3px; }
+  .reg__grid--dense .pbtn__name { font-size: 14px; }
+  .cashcol__row button, .voucher-mini { height: 36px; }
+  .cashinfo .pay__recv, .cashinfo .pay__change, .pay__due { padding-top: 4px; padding-bottom: 4px; }
+  .pay__done--panel { padding: 9px; min-height: 44px; }
+}
+
+/* ここまで低いと商品10品の全表示と完了ボタンの両立は物理的に不可能。
+   その場合は「完了ボタンが必ず押せる」を優先し、商品側をスクロールに逃がす
+   （会計は完了できないと成立しないが、商品はスクロールで到達できるため）。 */
+@media (max-height: 575px) and (min-width: 621px) {
+  /* 優先順位は ①完了ボタンが必ず押せる ②商品が全部見える の順（会計は完了できないと成立しない）。
+     ここまで低いと両立できないので、商品エリアをスクロールに逃がす。
+     品数の多い窓口(dense)はボタンが小さいぶん、少数品より上限を厳しくできる。 */
+  .reg__grid, .reg__grid--dense { flex: 0 1 auto; overflow-y: auto; }
+  .reg__grid--dense { max-height: 26vh; }
+  .reg__grid:not(.reg__grid--dense) { max-height: 30vh; }
+  .reg__grid:not(.reg__grid--dense) .pbtn { min-height: 56px; padding: 8px 6px; }
+}
+/* テンキーは position:fixed で .screen の外。低い画面では上端が画面外に出て
+   「1」「2」「3」の行に到達できなくなるため、高さを抑える（ネイト指摘）。 */
+@media (max-height: 640px) and (min-width: 621px) {
+  .keypad { bottom: 64px; padding: 7px; gap: 5px; }
+  .keypad button { padding: 9px 2px; min-height: 40px; font-size: 18px; }
+}
+
+@media (max-height: 535px) and (min-width: 621px) {
+  /* 優先順位: ①完了ボタンが必ず押せる ②商品が全部見える、の順。
+     ここまで低いと両立できないので、商品側をスクロールに逃がす。 */
+  .reg__grid--dense { max-height: 20vh; }
+  .reg__grid { flex: 0 1 auto; max-height: 22vh; overflow-y: auto; }
+  .pbtn { min-height: 52px; padding: 6px 5px; }
+  .pbtn__name { font-size: 17px; }
+  .pbtn__price { font-size: 13px; margin-top: 2px; }
+  .bar { padding-top: 4px; padding-bottom: 4px; }
+  .cashcol { gap: 4px; }
+  .cashcol__row { gap: 4px; }
+  .cashcol__row button, .voucher-mini { height: 32px; font-size: 15px; }
+  .cashinfo { margin-top: 4px; gap: 3px; }
+  .cashinfo .pay__recv strong { font-size: 18px; }
+  .cashinfo .pay__change strong { font-size: 20px; }
+  .pay__done--panel { padding: 8px; min-height: 42px; margin-top: 4px; }
+}
+
 /* --- モードバー（職員販売・品切れ登録） --- */
 .modebar {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -402,3 +480,31 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .tag--cash { background: #248a3d; }
 .tabs__chip { flex: 0.7 !important; }
 .staffpay__btn.is-dim { opacity: 0.35; }
+
+/* ===== 低い画面での職員販売モード対応 =====
+   .staffpay / .modebar の本体定義はこのファイルの後方にあるため、
+   上のメディアクエリ群の中に書くと後勝ちで打ち消される（2026-08-24 実測で判明）。
+   必ず本体定義より後ろに置くこと。 */
+@media (max-height: 700px) and (min-width: 621px) {
+  .staffpay { margin-top: 6px; gap: 5px; }
+  .staffpay__btn { min-height: 48px; padding: 10px 2px; font-size: 15px; }
+  .modebar { padding-top: 5px; padding-bottom: 5px; }
+}
+@media (max-height: 640px) and (min-width: 621px) {
+  .staffpay__btn { min-height: 44px; padding: 8px 2px; font-size: 14px; }
+}
+@media (max-height: 600px) and (min-width: 621px) {
+  .staffpay { margin-top: 4px; }
+  .staffpay__btn { min-height: 42px; padding: 7px 2px; font-size: 13px; }
+  .modebar { padding-top: 4px; padding-bottom: 4px; }
+}
+/* 職員販売・品切れモードは modebar(約39px)が商品エリアの上に載るぶん、
+   通常モードより縦が足りなくなる。その分だけ商品エリアの上限を下げて吸収する。
+   :has() は iPadOS 16.4以降のSafariで有効。効かない環境でも
+   上のメディアクエリ群により通常モードと同じ挙動になるだけで、破綻はしない。 */
+@media (max-height: 700px) and (min-width: 621px) {
+  .reg:has(.modebar) .reg__grid { max-height: 24vh; }
+}
+@media (max-height: 600px) and (min-width: 621px) {
+  .reg:has(.modebar) .reg__grid { max-height: 23vh; }
+}
