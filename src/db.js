@@ -76,3 +76,14 @@ export async function setMeta(key, value) {
   const db = await openDb();
   return asPromise(tx(db, STORE_META, 'readwrite').put({ key, value }));
 }
+
+export async function deleteMeta(key) {
+  const db = await openDb();
+  return asPromise(tx(db, STORE_META, 'readwrite').delete(key));
+}
+
+export async function clearSales() {
+  const db = await openDb();
+  await asPromise(tx(db, STORE_SALES, 'readwrite').clear());
+  await deleteMeta('last_sync_at');
+}

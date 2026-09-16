@@ -1,7 +1,8 @@
-import { state, go } from './state.js';
+import { state, go, render, resetCart } from './state.js';
 import { summarize } from '../core/summary.js';
 import { buildXlsx } from '../core/xlsx.js';
 import { detailSheet, summarySheet, xlsxFileName } from '../core/exportsheets.js';
+import { clearSales } from '../db.js';
 
 const YEN = (n) => `¥${n.toLocaleString('ja-JP')}`;
 
@@ -70,6 +71,8 @@ export function renderExport() {
           2. 各ファイルの「明細」シートを、合算テンプレートの「貼り付け」シートにコピー<br>
           3. 「集計結果」シートに総売上・PayPay・未納・商品券が自動で出ます
         </div>
+
+        <button class="btn-danger" data-clear-sales style="margin-top:24px"${state.sales.length === 0 ? ' disabled' : ''}>🧹 この端末の売上を全消去（祭り前リセット）</button>
       </div>
     </div>
   `;
@@ -79,6 +82,19 @@ export function renderExport() {
     if (sales.length === 0) { alert('書き出す会計がありません。'); return; }
     const bytes = buildXlsx([detailSheet(sales), summarySheet(sales)]);
     download(bytes, xlsxFileName(state.terminal, new Date()));
+  });
+  el.querySelector('[data-clear-sales]').addEventListener('click', async () => {
+    const n = state.sales.length;
+    if (n === 0) return;
+    const ok = confirm(`この端末に記録された売上 ${n}件 をすべて消します。商品・価格・同期キーは消えません。\n\n⚠️ 元に戻せません。祭りが始まる前にだけ使ってください。`);
+    if (!ok) return;
+    const input = prompt('確認のため「削除」と入力してください');
+    if (input !== '削除') { alert('キャンセルしました'); return; }
+    await clearSales();
+    state.sales = [];
+    resetCart();
+    render();
+    alert(`売上 ${n}件を消去しました`);
   });
 
   return el;
