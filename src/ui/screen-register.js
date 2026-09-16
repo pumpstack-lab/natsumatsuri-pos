@@ -4,7 +4,7 @@ import { availableProducts } from '../core/products.js';
 import { putProducts } from '../db.js';
 import { cartTotal, calcChange } from '../core/money.js';
 import { createSale, voidSale } from '../core/sale.js';
-import { CASH_UNITS_FOR, emptyCashTaps, tapsTotal, VOUCHER_VALUE } from '../core/cash.js';
+import { CASH_UNITS_FOR, cashUnitRows, emptyCashTaps, tapsTotal, VOUCHER_VALUE } from '../core/cash.js';
 import { putSale } from '../db.js';
 import { pushAll } from '../sync.js';
 
@@ -248,6 +248,15 @@ export function renderRegister() {
   const label = state.terminal === 'food' ? '🍔 フード' : '🥤 ドリンク';
   const seq = nextSeq(state.terminal);
   const units = CASH_UNITS_FOR(state.terminal);
+  const { rows: cashRows, danglingUnit } = cashUnitRows(units);
+  const cashBtnHtml = (u) => `<button data-cash="${u}" class="${state.cashTaps[u] > 0 ? 'is-on' : ''}">${YEN(u)}${state.cashTaps[u] > 0 ? `<small>×${state.cashTaps[u]}</small>` : ''}</button>`;
+  const voucherBtnHtml = `<button data-voucher class="cashcol__voucher ${state.vouchers > 0 ? 'is-on' : ''}">商品券${state.vouchers > 0 ? `<small>×${state.vouchers}</small>` : `<small>${YEN(VOUCHER_VALUE)}</small>`}</button>`;
+  const clearBtnHtml = `<button data-clear class="cashcol__clear" ${received === null && state.vouchers === 0 ? 'disabled' : ''}>クリア</button>`;
+  const voucherMiniHtml = `
+              <div class="voucher-mini ${state.vouchers > 0 ? 'is-on' : ''}">
+                <span>商品券</span>
+                <strong>${state.vouchers > 0 ? `−${YEN(voucherAmount)}` : '—'}</strong>
+              </div>`;
 
   el.innerHTML = `
     <div class="bar">
@@ -315,23 +324,28 @@ export function renderRegister() {
           <!-- 預かり金ボタンは右側の縦固定パネル。伝票が増えても預かり/お釣りが出ても絶対に動かない
                （連打時に1回目でボタンがずれて2回目が空振りするストレスを解消・2026-08-19 オーナー指摘） -->
           <div class="cashcol">
+            ${cashRows.map((row) => `
             <div class="cashcol__row">
-              ${units.slice(0, 2).map((u) => `<button data-cash="${u}" class="${state.cashTaps[u] > 0 ? 'is-on' : ''}">${YEN(u)}${state.cashTaps[u] > 0 ? `<small>×${state.cashTaps[u]}</small>` : ''}</button>`).join('')}
+              ${row.map(cashBtnHtml).join('')}
+            </div>`).join('')}
+            ${danglingUnit !== null ? `
+            <div class="cashcol__row">
+              ${cashBtnHtml(danglingUnit)}
+              <button data-other class="cashcol__other">その他</button>
+              ${clearBtnHtml}
             </div>
             <div class="cashcol__row">
-              ${units.slice(2, 4).map((u) => `<button data-cash="${u}" class="${state.cashTaps[u] > 0 ? 'is-on' : ''}">${YEN(u)}${state.cashTaps[u] > 0 ? `<small>×${state.cashTaps[u]}</small>` : ''}</button>`).join('')}
-            </div>
+              ${voucherBtnHtml}
+              ${voucherMiniHtml}
+            </div>` : `
             <div class="cashcol__row">
-              <button data-voucher class="cashcol__voucher ${state.vouchers > 0 ? 'is-on' : ''}">商品券${state.vouchers > 0 ? `<small>×${state.vouchers}</small>` : `<small>${YEN(VOUCHER_VALUE)}</small>`}</button>
+              ${voucherBtnHtml}
               <button data-other class="cashcol__other">その他</button>
             </div>
             <div class="cashcol__row">
-              <button data-clear class="cashcol__clear" ${received === null && state.vouchers === 0 ? 'disabled' : ''}>クリア</button>
-              <div class="voucher-mini ${state.vouchers > 0 ? 'is-on' : ''}">
-                <span>商品券</span>
-                <strong>${state.vouchers > 0 ? `−${YEN(voucherAmount)}` : '—'}</strong>
-              </div>
-            </div>
+              ${clearBtnHtml}
+              ${voucherMiniHtml}
+            </div>`}
           </div>
           <div class="cashinfo">
             <div class="pay__due">

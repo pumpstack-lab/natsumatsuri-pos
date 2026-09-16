@@ -35,8 +35,8 @@ test('tapsTotal: 何も押していなければ0', () => {
 // --- 窓口別の金種（2026-08-20 オーナー要望: ドリンクは¥10,000廃止・¥50新設） ---
 import { CASH_UNITS_FOR, ALL_CASH_UNITS } from '../src/core/cash.js';
 
-test('CASH_UNITS_FOR: フードは¥100/¥1,000/¥5,000/¥10,000', () => {
-  assert.deepEqual(CASH_UNITS_FOR('food'), [100, 1000, 5000, 10000]);
+test('CASH_UNITS_FOR: フードは¥50/¥100/¥1,000/¥5,000/¥10,000', () => {
+  assert.deepEqual(CASH_UNITS_FOR('food'), [50, 100, 500, 1000, 5000]);
 });
 
 test('CASH_UNITS_FOR: ドリンクは¥50/¥100/¥1,000/¥5,000（¥10,000なし）', () => {

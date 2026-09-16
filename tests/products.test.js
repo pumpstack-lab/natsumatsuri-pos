@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DEFAULT_PRODUCTS, availableProducts, reorderProducts } from '../src/core/products.js';
+import { DEFAULT_PRODUCTS, availableProducts, reorderProducts, mergeDefaultProducts } from '../src/core/products.js';
 
 test('DEFAULT_PRODUCTS: フードとドリンクの両方に仮メニューがある', () => {
   const food = DEFAULT_PRODUCTS.filter((p) => p.terminal === 'food');
@@ -55,4 +55,63 @@ test('reorderProducts: 並べ替えるとsort_orderが振り直される', () =>
   const r = reorderProducts(list, ['b', 'a']);
   assert.equal(r.find((p) => p.id === 'b').sort_order, 0);
   assert.equal(r.find((p) => p.id === 'a').sort_order, 1);
+});
+
+// --- mergeDefaultProducts（2026-09-16 実価格反映時のマージ規則） ---
+
+test('mergeDefaultProducts: 名前・価格がdefaultsで上書きされる', () => {
+  const stored = [
+    { id: 'f2', terminal: 'food', name: '焼きそば', price: 500, sort_order: 1, is_available: true },
+  ];
+  const defaults = [
+    { id: 'f2', terminal: 'food', name: '広島焼き', price: 600, sort_order: 1, is_available: true },
+  ];
+  const merged = mergeDefaultProducts(stored, defaults);
+  assert.equal(merged.length, 1);
+  assert.equal(merged[0].name, '広島焼き');
+  assert.equal(merged[0].price, 600);
+});
+
+test('mergeDefaultProducts: is_availableとsort_orderはstoredの値を維持する', () => {
+  const stored = [
+    { id: 'f2', terminal: 'food', name: '焼きそば', price: 500, sort_order: 3, is_available: false },
+  ];
+  const defaults = [
+    { id: 'f2', terminal: 'food', name: '広島焼き', price: 600, sort_order: 1, is_available: true },
+  ];
+  const merged = mergeDefaultProducts(stored, defaults);
+  assert.equal(merged[0].is_available, false);
+  assert.equal(merged[0].sort_order, 3);
+});
+
+test('mergeDefaultProducts: storedにしかないユーザー追加商品は残る', () => {
+  const stored = [
+    { id: 'f2', terminal: 'food', name: '焼きそば', price: 500, sort_order: 1, is_available: true },
+    { id: 'custom1', terminal: 'food', name: 'たこ焼き', price: 400, sort_order: 5, is_available: true },
+  ];
+  const defaults = [
+    { id: 'f2', terminal: 'food', name: '広島焼き', price: 600, sort_order: 1, is_available: true },
+  ];
+  const merged = mergeDefaultProducts(stored, defaults);
+  assert.equal(merged.length, 2);
+  assert.ok(merged.some((p) => p.id === 'custom1' && p.name === 'たこ焼き'));
+});
+
+test('mergeDefaultProducts: 引数を変異させない', () => {
+  const stored = [
+    { id: 'f2', terminal: 'food', name: '焼きそば', price: 500, sort_order: 1, is_available: true },
+  ];
+  const defaults = [
+    { id: 'f2', terminal: 'food', name: '広島焼き', price: 600, sort_order: 1, is_available: true },
+  ];
+  const storedCopy = JSON.parse(JSON.stringify(stored));
+  const defaultsCopy = JSON.parse(JSON.stringify(defaults));
+  mergeDefaultProducts(stored, defaults);
+  assert.deepEqual(stored, storedCopy);
+  assert.deepEqual(defaults, defaultsCopy);
+});
+
+test('mergeDefaultProducts: storedが空ならdefaultsと同内容になる', () => {
+  const merged = mergeDefaultProducts([], DEFAULT_PRODUCTS);
+  assert.deepEqual(merged, DEFAULT_PRODUCTS);
 });

@@ -1,5 +1,5 @@
 import { getAllProducts, putProducts, getMeta, setMeta, getAllSales } from '../db.js';
-import { DEFAULT_PRODUCTS } from '../core/products.js';
+import { DEFAULT_PRODUCTS, PRODUCTS_SEED_VERSION, mergeDefaultProducts } from '../core/products.js';
 import { emptyCashTaps } from '../core/cash.js';
 
 export const state = {
@@ -28,9 +28,11 @@ export function render() {
 
 export async function loadAll() {
   let products = await getAllProducts();
-  if (products.length === 0) {
-    await putProducts(DEFAULT_PRODUCTS);
-    products = DEFAULT_PRODUCTS.slice();
+  const seed = await getMeta('products_seed', null);
+  if (seed !== PRODUCTS_SEED_VERSION) {
+    products = mergeDefaultProducts(products, DEFAULT_PRODUCTS);
+    await putProducts(products);
+    await setMeta('products_seed', PRODUCTS_SEED_VERSION);
   }
   state.products = products;
   state.sales = await getAllSales();

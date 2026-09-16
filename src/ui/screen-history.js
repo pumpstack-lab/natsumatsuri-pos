@@ -4,7 +4,7 @@ import { summarize, productBreakdown } from '../core/summary.js';
 import { editSaleItems, voidSale } from '../core/sale.js';
 import { cartTotal } from '../core/money.js';
 import { availableProducts } from '../core/products.js';
-import { emptyCashTaps, tapsTotal, VOUCHER_VALUE } from '../core/cash.js';
+import { CASH_UNITS_FOR, cashUnitRows, emptyCashTaps, tapsTotal, VOUCHER_VALUE } from '../core/cash.js';
 import { calcChange } from '../core/money.js';
 import { putSale } from '../db.js';
 import { pushAll } from '../sync.js';
@@ -116,6 +116,12 @@ function sheetHtml(sale) {
   const addable = availableProducts(state.products, state.terminal)
     .filter((p) => !draft.some((i) => i.product_id === p.id));
 
+  const units = CASH_UNITS_FOR(state.terminal);
+  const { rows: cashRows, danglingUnit } = cashUnitRows(units);
+  const ecashBtnHtml = (u) => `<button data-ecash="${u}" class="${draftTaps[u] > 0 ? 'is-on' : ''}">${YEN(u)}${draftTaps[u] > 0 ? `<small>×${draftTaps[u]}</small>` : ''}</button>`;
+  const evoucherBtnHtml = `<button data-evoucher class="cashcol__voucher ${draftVouchers > 0 ? 'is-on' : ''}">商品券${draftVouchers > 0 ? `<small>×${draftVouchers}</small>` : `<small>${YEN(VOUCHER_VALUE)}</small>`}</button>`;
+  const eclearBtnHtml = `<button data-eclear class="cashcol__clear">クリア</button>`;
+
   return `
     <div class="sheet-bg" data-sheet-bg>
       <div class="sheet">
@@ -147,18 +153,20 @@ function sheetHtml(sale) {
         <div class="sheet__cash">
           <div class="sheet__cash-label">預かり金・商品券</div>
           <div class="cashcol">
+            ${cashRows.map((row) => `
             <div class="cashcol__row">
-              <button data-ecash="100" class="${draftTaps[100] > 0 ? 'is-on' : ''}">¥100${draftTaps[100] > 0 ? `<small>×${draftTaps[100]}</small>` : ''}</button>
-              <button data-ecash="1000" class="${draftTaps[1000] > 0 ? 'is-on' : ''}">¥1,000${draftTaps[1000] > 0 ? `<small>×${draftTaps[1000]}</small>` : ''}</button>
-            </div>
+              ${row.map(ecashBtnHtml).join('')}
+            </div>`).join('')}
+            ${danglingUnit !== null ? `
             <div class="cashcol__row">
-              <button data-ecash="5000" class="${draftTaps[5000] > 0 ? 'is-on' : ''}">¥5,000${draftTaps[5000] > 0 ? `<small>×${draftTaps[5000]}</small>` : ''}</button>
-              <button data-ecash="10000" class="${draftTaps[10000] > 0 ? 'is-on' : ''}">¥10,000${draftTaps[10000] > 0 ? `<small>×${draftTaps[10000]}</small>` : ''}</button>
-            </div>
+              ${ecashBtnHtml(danglingUnit)}
+              ${evoucherBtnHtml}
+              ${eclearBtnHtml}
+            </div>` : `
             <div class="cashcol__row">
-              <button data-evoucher class="cashcol__voucher ${draftVouchers > 0 ? 'is-on' : ''}">商品券${draftVouchers > 0 ? `<small>×${draftVouchers}</small>` : `<small>${YEN(VOUCHER_VALUE)}</small>`}</button>
-              <button data-eclear class="cashcol__clear">クリア</button>
-            </div>
+              ${evoucherBtnHtml}
+              ${eclearBtnHtml}
+            </div>`}
           </div>
           ${editingIsStaff ? `
             <div class="sheet__cash-label" style="margin-top:12px">支払い方法（${esc(sale.staffName)} さん）</div>
