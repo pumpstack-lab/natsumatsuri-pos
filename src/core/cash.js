@@ -41,5 +41,5 @@ export function tapsTotal(taps) {
   return ALL_CASH_UNITS.reduce((sum, unit) => sum + unit * (taps[unit] ?? 0), 0);
 }
 
-// 商品券の額面（仮）。実額が決まったらここだけ直す。
-export const VOUCHER_VALUE = 100;
+// 商品券の額面（2026-09-16 オーナー確定: ¥200）。
+export const VOUCHER_VALUE = 200;

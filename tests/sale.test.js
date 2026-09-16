@@ -205,13 +205,13 @@ test('createSale: 商品券の枚数が記録される', () => {
 });
 
 test('createSale: 商品券を引いた残りでお釣りを計算する', () => {
-  // 合計¥1,000 - 商品券3枚¥300 = 現金¥700。¥1,000預かり → お釣り¥300
+  // 合計¥1,000 - 商品券3枚¥600(額面¥200・2026-09-16確定) = 現金¥400。¥1,000預かり → お釣り¥600
   const s = createSale({
     terminal: 'food', seq: 1, received: 1000, vouchers: 3, now: '2026-09-18T19:42:00.000Z',
     items: [{ product_id: 'p1', name: '焼きそば', unit_price: 500, qty: 2 }],
   });
   assert.equal(s.total, 1000, '売上は全額のまま（商品券は後で換金される）');
-  assert.equal(s.change, 300);
+  assert.equal(s.change, 600);
 });
 
 test('createSale: 商品券なしなら0で記録される', () => {

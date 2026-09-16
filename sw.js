@@ -1,4 +1,4 @@
-const CACHE = 'komoreji-pos-2026-09-16_1730';
+const CACHE = 'komoreji-pos-2026-09-16_1800';
 const ASSETS = [
   './',
   './index.html',
