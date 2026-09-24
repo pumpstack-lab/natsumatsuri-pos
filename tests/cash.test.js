@@ -53,3 +53,49 @@ test('tapsTotal: ¥50を3回で¥150', () => {
   taps[50] = 3;
   assert.equal(tapsTotal(taps), 150);
 });
+
+// --- 表示する金種とカウンタのキーがズレていないことを守る ---
+// 2026-09-24 実害: フードの¥10,000を¥500に差し替えた時 ALL_CASH_UNITS を直し忘れ、
+// ¥500ボタンを押しても taps[500] が undefined+1=NaN になり預かり金が増えず、
+// 「金額のボタンが押せない」と現場から報告が来た。以後この2つは必ず突合する。
+import { CASH_UNITS_BY_TERMINAL } from '../src/core/cash.js';
+
+test('ALL_CASH_UNITS: 全窓口が表示する金種を漏れなく含む', () => {
+  for (const [terminal, units] of Object.entries(CASH_UNITS_BY_TERMINAL)) {
+    for (const u of units) {
+      assert.ok(
+        ALL_CASH_UNITS.includes(u),
+        `${terminal}窓口が表示する¥${u}が ALL_CASH_UNITS に無い（押しても効かなくなる）`
+      );
+    }
+  }
+});
+
+test('emptyCashTaps: 全窓口が表示する金種のキーを持つ', () => {
+  const taps = emptyCashTaps();
+  for (const [terminal, units] of Object.entries(CASH_UNITS_BY_TERMINAL)) {
+    for (const u of units) {
+      assert.equal(taps[u], 0, `${terminal}窓口の¥${u}のキーが無い`);
+    }
+  }
+});
+
+test('¥500を押すと預かり金が¥500増える（フード窓口）', () => {
+  const taps = emptyCashTaps();
+  taps[500] += 1;
+  assert.equal(taps[500], 1, '¥500のタップ回数が NaN になっている');
+  assert.equal(tapsTotal(taps), 500);
+});
+
+test('¥500を2回・¥100を1回で¥1,100', () => {
+  const taps = emptyCashTaps();
+  taps[500] += 1;
+  taps[500] += 1;
+  taps[100] += 1;
+  assert.equal(tapsTotal(taps), 1100);
+});
+
+test('tapsTotal: ¥500のキーが無い古い保存データでもNaNにならない', () => {
+  // 既にiPadに残っている会計（500キー無し）を読んでも合計が壊れないこと
+  assert.equal(tapsTotal({ 50: 0, 100: 1, 1000: 0, 5000: 0, 10000: 0 }), 100);
+});

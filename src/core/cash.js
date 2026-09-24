@@ -9,7 +9,12 @@ export const CASH_UNITS_BY_TERMINAL = {
 
 // 全窓口の金種の和集合。tapsの初期化と合計はこちらを使う
 // （窓口を切り替えてもキーが欠落しないように）。
-export const ALL_CASH_UNITS = [50, 100, 1000, 5000, 10000];
+// ⚠️ CASH_UNITS_BY_TERMINAL に金種を足したら必ずここにも足す。
+// 漏らすと emptyCashTaps() がキーを作らず、そのボタンを押しても
+// undefined+1=NaN になって預かり金が増えない＝「押せない」ように見える。
+// tests/cash.test.js の「ALL_CASH_UNITS: 全窓口が表示する金種を漏れなく含む」が突合する。
+// ¥10,000 は現在どの窓口にも出していないが、過去の会計データが taps に持っているため残す。
+export const ALL_CASH_UNITS = [50, 100, 500, 1000, 5000, 10000];
 
 export function CASH_UNITS_FOR(terminal) {
   return CASH_UNITS_BY_TERMINAL[terminal] ?? CASH_UNITS_BY_TERMINAL.food;

@@ -37,7 +37,10 @@ function changeQty(productId, delta) {
 }
 
 function tapCash(value) {
-  state.cashTaps[value] += 1;
+  // キーが無い金種（金種表に足したのに ALL_CASH_UNITS へ足し忘れた・
+  // 古い保存データを読んだ）でも NaN にせず 1 から数え始める。
+  // 2026-09-24: ¥500 が undefined+1=NaN になり「押しても効かない」実害が出た。
+  state.cashTaps[value] = (state.cashTaps[value] ?? 0) + 1;
   render();
 }
 
