@@ -1,7 +1,8 @@
 import { state, go, render, resetCart } from './state.js';
-import { summarize } from '../core/summary.js';
+import { esc } from './escape.js';
+import { summarize, productBreakdown } from '../core/summary.js';
 import { buildXlsx } from '../core/xlsx.js';
-import { detailSheet, summarySheet, xlsxFileName } from '../core/exportsheets.js';
+import { detailSheet, summarySheet, productSheet, xlsxFileName } from '../core/exportsheets.js';
 import { clearSales } from '../db.js';
 
 const YEN = (n) => `¥${n.toLocaleString('ja-JP')}`;
@@ -27,6 +28,8 @@ export function renderExport() {
   el.className = 'screen';
   const sales = mySales();
   const sum = summarize(sales);
+  const breakdown = productBreakdown(sales);
+  const topProducts = breakdown.slice(0, 5);
   const voided = sales.filter((s) => s.status === 'voided').length;
   const label = state.terminal === 'food' ? 'フード窓口' : 'ドリンク窓口';
 
@@ -60,9 +63,25 @@ export function renderExport() {
           </div>
         </div>
 
+        <div class="card">
+          <h2>商品別の売上（「商品別」シートに出ます）</h2>
+          ${topProducts.length === 0 ? `
+            <div style="font-size:13px;color:var(--gray)">まだ会計がありません</div>
+          ` : `
+            <div style="font-size:13px;line-height:1.9">
+              ${topProducts.map((p) => `
+                <div style="display:flex;justify-content:space-between;gap:12px">
+                  <span>${esc(p.name)}</span>
+                  <span style="color:var(--gray)"><strong style="color:var(--ink)">${p.qty}</strong>個 / <strong style="color:var(--ink)">${YEN(p.amount)}</strong></span>
+                </div>`).join('')}
+              ${breakdown.length > topProducts.length ? `<div style="color:var(--gray);margin-top:4px">…ほか${breakdown.length - topProducts.length}品目（Excelに全部出ます）</div>` : ''}
+            </div>
+          `}
+        </div>
+
         <button class="btn-primary" data-xlsx>Excelで書き出す（.xlsx）</button>
         <p style="font-size:12px;color:var(--gray);margin-top:8px;line-height:1.6">
-          1ファイルに「明細」「サマリー」の2シートが入ります。文字化けはしません。
+          1ファイルに「明細」「サマリー」「商品別」の3シートが入ります。文字化けはしません。
         </p>
 
         <div class="card" style="margin-top:12px;font-size:13px;color:var(--gray);line-height:1.7">
@@ -80,7 +99,7 @@ export function renderExport() {
   el.querySelector('[data-go]').addEventListener('click', () => go('top'));
   el.querySelector('[data-xlsx]').addEventListener('click', () => {
     if (sales.length === 0) { alert('書き出す会計がありません。'); return; }
-    const bytes = buildXlsx([detailSheet(sales), summarySheet(sales)]);
+    const bytes = buildXlsx([detailSheet(sales), summarySheet(sales), productSheet(sales)]);
     download(bytes, xlsxFileName(state.terminal, new Date()));
   });
   el.querySelector('[data-clear-sales]').addEventListener('click', async () => {
