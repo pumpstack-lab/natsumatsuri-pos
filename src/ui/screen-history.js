@@ -4,7 +4,7 @@ import { summarize, productBreakdown } from '../core/summary.js';
 import { editSaleItems, voidSale } from '../core/sale.js';
 import { cartTotal } from '../core/money.js';
 import { availableProducts } from '../core/products.js';
-import { CASH_UNITS_FOR, cashUnitRows, emptyCashTaps, tapsTotal, VOUCHER_VALUE } from '../core/cash.js';
+import { CASH_UNITS_FOR, cashUnitRows, emptyCashTaps, tapsTotal, addTap, VOUCHER_VALUE } from '../core/cash.js';
 import { calcChange } from '../core/money.js';
 import { putSale } from '../db.js';
 import { pushAll } from '../sync.js';
@@ -57,8 +57,7 @@ function closeEdit() {
 // 金額ボタンは既存の預かり金に加算する（登録画面と同じ積み上げ感覚）。
 // tapsTotalで置き換えると、元の預かり¥10,000が1タップで¥100に化けるバグになる（レビューで発見・実測確認済み）。
 function tapEditCash(value) {
-  // キーが無い金種でも NaN にしない（2026-09-24 ¥500で発生・cash.js のコメント参照）
-  draftTaps[value] = (draftTaps[value] ?? 0) + 1;
+  addTap(draftTaps, value);
   draftReceived = (draftReceived ?? 0) + value;
   render();
 }

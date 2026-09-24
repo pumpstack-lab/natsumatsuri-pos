@@ -46,5 +46,15 @@ export function tapsTotal(taps) {
   return ALL_CASH_UNITS.reduce((sum, unit) => sum + unit * (taps[unit] ?? 0), 0);
 }
 
+// 金種ボタンを1回押した時のタップ回数の更新。
+// キーが無い金種（金種表に足したのに ALL_CASH_UNITS へ足し忘れた・古い保存データを読んだ）
+// でも undefined+1=NaN にせず 1 から数え始める。
+// 2026-09-24: ¥500 が NaN になり「押しても効かない」実害が出たため純粋関数に切り出した
+// （UIの中に書いたままでは単体テストで守れなかった）。
+export function addTap(taps, unit) {
+  taps[unit] = (taps[unit] ?? 0) + 1;
+  return taps;
+}
+
 // 商品券の額面（2026-09-16 オーナー確定: ¥200）。
 export const VOUCHER_VALUE = 200;

@@ -4,6 +4,10 @@
 
 前提: ローカルで python3 -m http.server 8087 を起動しておく
 実行:  python3 scripts/verify_cash500.py
+
+⚠️ 検証用に会計を1件登録する。後片付けはこのスクリプトが作った会計のIDだけを
+   指定して消す（sales全体の clear() は絶対に使わない）。
+   実売上の入った端末・ブラウザでは実行しないこと。
 """
 import sys
 from playwright.sync_api import sync_playwright
@@ -74,9 +78,20 @@ with sync_playwright() as p:
         check(any(s["received"] == 500 and s["total"] == 300 for s in latest),
               f"[{w}x{h}] 保存された会計に預かり¥500が残る → {latest[:3]}")
 
-        # 後片付け（このブラウザ内のテストデータのみ）
-        pg.evaluate("""()=>new Promise(res=>{const r=indexedDB.open('natsumatsuri-pos');
-          r.onsuccess=()=>{const tx=r.result.transaction('sales','readwrite');tx.objectStore('sales').clear();tx.oncomplete=()=>res(1)}})""")
+        # 後片付け: このスクリプトが今作った会計のIDだけを消す。
+        # sales 全体の clear() は実売上を巻き込むため絶対に使わない
+        # （feedback_prod_e2e_no_destructive_cleanup の教訓）。
+        made = [s["id"] for s in pg.evaluate("""()=>new Promise(res=>{const r=indexedDB.open('natsumatsuri-pos');
+          r.onsuccess=()=>{const q=r.result.transaction('sales').objectStore('sales').getAll();
+          q.onsuccess=()=>res(q.result)}})""") if s.get("received") == 500 and s.get("total") == 300]
+        check(len(made) >= 1, f"[{w}x{h}] 後片付け対象（このスクリプトが作った会計）={len(made)}件")
+        pg.evaluate("""(ids)=>new Promise(res=>{const r=indexedDB.open('natsumatsuri-pos');
+          r.onsuccess=()=>{const tx=r.result.transaction('sales','readwrite');const st=tx.objectStore('sales');
+          ids.forEach(id=>st.delete(id));tx.oncomplete=()=>res(1)}})""", made)
+        left = pg.evaluate("""()=>new Promise(res=>{const r=indexedDB.open('natsumatsuri-pos');
+          r.onsuccess=()=>{const q=r.result.transaction('sales').objectStore('sales').count();
+          q.onsuccess=()=>res(q.result)}})""")
+        check(left == 0, f"[{w}x{h}] 後片付け後の残件数={left}")
         ctx.close()
     b.close()
 

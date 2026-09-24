@@ -4,7 +4,7 @@ import { availableProducts } from '../core/products.js';
 import { putProducts } from '../db.js';
 import { cartTotal, calcChange } from '../core/money.js';
 import { createSale, voidSale } from '../core/sale.js';
-import { CASH_UNITS_FOR, cashUnitRows, emptyCashTaps, tapsTotal, VOUCHER_VALUE } from '../core/cash.js';
+import { CASH_UNITS_FOR, cashUnitRows, emptyCashTaps, tapsTotal, addTap, VOUCHER_VALUE } from '../core/cash.js';
 import { putSale } from '../db.js';
 import { pushAll } from '../sync.js';
 
@@ -37,10 +37,7 @@ function changeQty(productId, delta) {
 }
 
 function tapCash(value) {
-  // キーが無い金種（金種表に足したのに ALL_CASH_UNITS へ足し忘れた・
-  // 古い保存データを読んだ）でも NaN にせず 1 から数え始める。
-  // 2026-09-24: ¥500 が undefined+1=NaN になり「押しても効かない」実害が出た。
-  state.cashTaps[value] = (state.cashTaps[value] ?? 0) + 1;
+  addTap(state.cashTaps, value);
   render();
 }
 
