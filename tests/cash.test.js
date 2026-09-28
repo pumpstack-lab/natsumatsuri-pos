@@ -122,3 +122,7 @@ test('tapsTotal: ¥500のキーが無い古い保存データでもNaNになら�
   // 既にiPadに残っている会計（500キー無し）を読んでも合計が壊れないこと
   assert.equal(tapsTotal({ 50: 0, 100: 1, 1000: 0, 5000: 0, 10000: 0 }), 100);
 });
+
+test('CASH_UNITS_FOR: マルシェはフードと同じ5種', () => {
+  assert.deepEqual(CASH_UNITS_FOR('marche'), [50, 100, 500, 1000, 5000]);
+});
