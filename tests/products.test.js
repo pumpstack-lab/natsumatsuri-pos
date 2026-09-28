@@ -115,3 +115,57 @@ test('mergeDefaultProducts: storedが空ならdefaultsと同内容になる', ()
   const merged = mergeDefaultProducts([], DEFAULT_PRODUCTS);
   assert.deepEqual(merged, DEFAULT_PRODUCTS);
 });
+
+// --- カテゴリー（2026-09-25 マルシェ対応） ---
+import { categoriesOf, filterByCategory, ALL_CATEGORY } from '../src/core/products.js';
+
+const MARCHE = [
+  { id: 'm1', terminal: 'marche', name: 'ハロウィンチャーム', price: 100, category: 'レスポ', sort_order: 0, is_available: true },
+  { id: 'm2', terminal: 'marche', name: 'ビーズブレスレット', price: 100, category: 'レスポ', sort_order: 1, is_available: true },
+  { id: 'm3', terminal: 'marche', name: 'アクリルたわし（スマイル）', price: 100, category: 'こもあん', sort_order: 2, is_available: true },
+  { id: 'm4', terminal: 'marche', name: 'ブローチ', price: 100, category: 'こもあん', sort_order: 3, is_available: false },
+  { id: 'm5', terminal: 'marche', name: '魚魚', price: 100, category: 'B型', sort_order: 4, is_available: true },
+];
+
+test('categoriesOf: 商品の並び順どおりにカテゴリーが出る（重複なし）', () => {
+  assert.deepEqual(categoriesOf(MARCHE), ['レスポ', 'こもあん', 'B型']);
+});
+
+test('categoriesOf: 品切れの商品しかないカテゴリーも出る（復活させられるように）', () => {
+  const only = [{ id: 'x', terminal: 'marche', name: 'X', price: 100, category: '限定', sort_order: 0, is_available: false }];
+  assert.deepEqual(categoriesOf(only), ['限定']);
+});
+
+test('categoriesOf: カテゴリーが無い商品（祭り）では空配列＝タブを出さない', () => {
+  const festival = [
+    { id: 'f1', terminal: 'food', name: '広島焼き', price: 600, sort_order: 0, is_available: true },
+    { id: 'f2', terminal: 'food', name: '冷やしパイン', price: 300, sort_order: 1, is_available: true },
+  ];
+  assert.deepEqual(categoriesOf(festival), []);
+});
+
+test('categoriesOf: カテゴリー有りと無しが混ざっても有る分だけ出す', () => {
+  const mixed = [
+    { id: 'a', terminal: 'marche', name: 'A', price: 100, sort_order: 0, is_available: true },
+    { id: 'b', terminal: 'marche', name: 'B', price: 100, category: '雑貨', sort_order: 1, is_available: true },
+  ];
+  assert.deepEqual(categoriesOf(mixed), ['雑貨']);
+});
+
+test('filterByCategory: 指定カテゴリーの商品だけ返す', () => {
+  const r = filterByCategory(MARCHE, 'レスポ');
+  assert.deepEqual(r.map((p) => p.id), ['m1', 'm2']);
+});
+
+test('filterByCategory: ALL_CATEGORY なら全部返す', () => {
+  const r = filterByCategory(MARCHE, ALL_CATEGORY);
+  assert.deepEqual(r.map((p) => p.id), ['m1', 'm2', 'm3', 'm4', 'm5']);
+});
+
+test('filterByCategory: 未指定(null)なら全部返す', () => {
+  assert.equal(filterByCategory(MARCHE, null).length, 5);
+});
+
+test('filterByCategory: 存在しないカテゴリーなら空（画面は空表示になるだけで落ちない）', () => {
+  assert.deepEqual(filterByCategory(MARCHE, 'ない分類'), []);
+});

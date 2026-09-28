@@ -46,6 +46,28 @@ export function availableProducts(products, terminal) {
     .sort((a, b) => a.sort_order - b.sort_order);
 }
 
+// カテゴリータブの「すべて」を表す番兵。商品の category と衝突しない値にする。
+export const ALL_CATEGORY = '__all__';
+
+// 商品配列からカテゴリーの一覧を作る。並び順は商品の並び順に従う
+// （カテゴリー順という別概念を作らず、商品を並べ替えればタブ順も追随する）。
+// category を持たない商品（祭りのフード・ドリンク）しか無ければ空配列を返し、
+// 呼び出し側はタブを描画しない＝既存の画面が変わらない。
+export function categoriesOf(products) {
+  const seen = [];
+  for (const p of [...products].sort((a, b) => a.sort_order - b.sort_order)) {
+    if (!p.category) continue;
+    if (!seen.includes(p.category)) seen.push(p.category);
+  }
+  return seen;
+}
+
+// 選択中のカテゴリーで商品を絞る。ALL_CATEGORY / 未指定なら絞らない。
+export function filterByCategory(products, category) {
+  if (!category || category === ALL_CATEGORY) return products;
+  return products.filter((p) => p.category === category);
+}
+
 export function reorderProducts(products, orderedIds) {
   return products.map((p) => {
     const idx = orderedIds.indexOf(p.id);
