@@ -5,6 +5,7 @@ import { editSaleItems, voidSale } from '../core/sale.js';
 import { cartTotal } from '../core/money.js';
 import { availableProducts } from '../core/products.js';
 import { CASH_UNITS_FOR, cashUnitRows, emptyCashTaps, tapsTotal, addTap, VOUCHER_VALUE } from '../core/cash.js';
+import { eventLabel } from '../core/events.js';
 import { calcChange } from '../core/money.js';
 import { putSale } from '../db.js';
 import { pushAll } from '../sync.js';
@@ -213,7 +214,7 @@ export function renderHistory() {
 
   const sales = mySales();
   const sum = summarize(sales);
-  const label = state.terminal === 'food' ? '🍔 フード窓口' : '🥤 ドリンク窓口';
+  const label = eventLabel(state.terminal);
   const editing = state.editingSaleId ? sales.find((s) => s.id === state.editingSaleId) : null;
   const breakdown = productBreakdown(sales);
   const listSales = staffOnly ? sales.filter((s) => s.staffName) : sales;

@@ -1,5 +1,6 @@
 import { state, go, render, resetCart } from './state.js';
 import { esc } from './escape.js';
+import { eventLabel } from '../core/events.js';
 import { summarize, productBreakdown } from '../core/summary.js';
 import { buildXlsx } from '../core/xlsx.js';
 import { detailSheet, summarySheet, productSheet, xlsxFileName } from '../core/exportsheets.js';
@@ -31,7 +32,7 @@ export function renderExport() {
   const breakdown = productBreakdown(sales);
   const topProducts = breakdown.slice(0, 5);
   const voided = sales.filter((s) => s.status === 'voided').length;
-  const label = state.terminal === 'food' ? 'フード窓口' : 'ドリンク窓口';
+  const label = eventLabel(state.terminal);
 
   el.innerHTML = `
     <div class="bar">

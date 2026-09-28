@@ -82,25 +82,25 @@ with sync_playwright() as p:
     rows = sheets["商品別"]
     print("  --- 商品別シートの中身 ---")
     for r in rows: print("   ", r)
-    check(rows[0] == ["商品名", "単価", "個数", "売上", "構成比(%)"], f"見出し={rows[0]}")
+    check(rows[0] == ["カテゴリー", "商品名", "単価", "個数", "売上", "構成比(%)"], f"見出し={rows[0]}")
     body = rows[1:-1]
-    hiro = [r for r in body if r[0] == "広島焼き"]
-    check(len(hiro) == 1 and hiro[0][1] == "600" and hiro[0][2] == "2" and hiro[0][3] == "1200",
+    hiro = [r for r in body if r[1] == "広島焼き"]
+    check(len(hiro) == 1 and hiro[0][2] == "600" and hiro[0][3] == "2" and hiro[0][4] == "1200",
           f"広島焼き 単価600/個数2/売上1200 → {hiro}")
-    pine = [r for r in body if r[0] == "冷やしパイン"]
-    check(len(pine) == 1 and pine[0][2] == "1" and pine[0][3] == "300", f"冷やしパイン → {pine}")
-    check(not any(r[0].startswith("エビフライ") for r in body), f"取消したエビフライは出ない → {[r[0] for r in body]}")
-    amounts = [float(r[3]) for r in body]
+    pine = [r for r in body if r[1] == "冷やしパイン"]
+    check(len(pine) == 1 and pine[0][3] == "1" and pine[0][4] == "300", f"冷やしパイン → {pine}")
+    check(not any(r[1].startswith("エビフライ") for r in body), f"取消したエビフライは出ない → {[r[1] for r in body]}")
+    amounts = [float(r[4]) for r in body]
     check(amounts == sorted(amounts, reverse=True), f"売上の大きい順 → {amounts}")
     last = rows[-1]
-    check(last[0] == "合計" and last[2] == "3" and last[3] == "1500" and last[4] == "100",
+    check(last[1] == "合計" and last[3] == "3" and last[4] == "1500" and last[5] == "100",
           f"合計行={last}（個数3・売上1500・構成比100）")
     # 明細シートの有効行の小計合計と一致するか（シート間の整合）
     det = sheets["明細"]
     det_sum = sum(int(r[6]) for r in det[1:] if r[10] == "有効")
     check(det_sum == 1500, f"明細シートの有効小計合計={det_sum} と商品別の合計1500が一致")
     # 構成比の各行を足すとちょうど100になるか（オーナーが検算しても合うこと）
-    ratios = [float(r[4]) for r in body]
+    ratios = [float(r[5]) for r in body]
     check(abs(sum(ratios) - 100) < 1e-9, f"構成比の各行合計={sum(ratios)}（期待 100）")
 
     # 単価混在時に「混在」と出す件は純粋関数のテスト（tests/summary.test.js）で担保。

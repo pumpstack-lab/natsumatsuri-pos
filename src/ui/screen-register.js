@@ -1,6 +1,7 @@
 import { esc } from './escape.js';
 import { state, go, render, resetCart, nextSeq } from './state.js';
 import { availableProducts, categoriesOf, filterByCategory, ALL_CATEGORY } from '../core/products.js';
+import { eventLabel } from '../core/events.js';
 import { putProducts } from '../db.js';
 import { cartTotal, calcChange } from '../core/money.js';
 import { createSale, voidSale } from '../core/sale.js';
@@ -251,7 +252,7 @@ export function renderRegister() {
   const received = receivedTotal();
   const voucherAmount = state.vouchers * VOUCHER_VALUE;
   const { change, shortage, canComplete, cashDue } = calcChange(total, received, voucherAmount);
-  const label = state.terminal === 'food' ? '🍔 フード' : '🥤 ドリンク';
+  const label = eventLabel(state.terminal);
   const seq = nextSeq(state.terminal);
   const units = CASH_UNITS_FOR(state.terminal);
   const { rows: cashRows, danglingUnit } = cashUnitRows(units);
