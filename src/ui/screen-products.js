@@ -32,6 +32,8 @@ async function edit(id) {
   if (!p) return;
   const name = prompt('商品名', p.name);
   if (name === null) return;
+  const category = prompt('分類（マルシェのカテゴリー。空欄なら分類なし）', p.category ?? '');
+  if (category === null) return;
   const priceStr = prompt('価格（円・整数）', String(p.price));
   if (priceStr === null) return;
   const price = parseInt(priceStr, 10);
@@ -41,6 +43,7 @@ async function edit(id) {
   }
   p.name = name.trim() || p.name;
   p.price = price;
+  p.category = category.trim();
   await persist();
 }
 
@@ -48,6 +51,8 @@ async function add(terminal) {
   const name = prompt('商品名');
   if (name === null) return;          // キャンセル
   if (!name.trim()) return;
+  const category = prompt('分類（マルシェのカテゴリー。空欄なら分類なし）', '');
+  if (category === null) return;
   const priceStr = prompt('価格（円・整数）');
   if (priceStr === null) return;      // キャンセル（入力ミスとは区別する）
   const price = parseInt(priceStr, 10);
@@ -65,6 +70,7 @@ async function add(terminal) {
     name: name.trim(),
     price,
     sort_order: nextOrder,
+    category: category.trim(),
     is_available: true,
   });
   await persist();

@@ -78,15 +78,16 @@ function percentShares(amounts, total) {
 // この xlsx 生成には書式(styles.xml)が無く、0.382 で出すとExcelに
 // 「0.382」と表示されて読めないため（書式対応は既存シートを壊すので入れない）。
 export function productSheet(sales) {
-  const rows = [['商品名', '単価', '個数', '売上', '構成比(%)']];
+  const rows = [['カテゴリー', '商品名', '単価', '個数', '売上', '構成比(%)']];
   const map = new Map();
   for (const sale of sales) {
     if (sale.status !== 'active') continue;
     for (const item of sale.items) {
-      const cur = map.get(item.name) ?? { name: item.name, qty: 0, amount: 0, prices: new Set() };
+      const cur = map.get(item.name) ?? { name: item.name, category: item.category ?? '', qty: 0, amount: 0, prices: new Set() };
       cur.qty += item.qty;
       cur.amount += item.unit_price * item.qty;
       cur.prices.add(item.unit_price);
+      if (!cur.category && item.category) cur.category = item.category;
       map.set(item.name, cur);
     }
   }
@@ -96,6 +97,7 @@ export function productSheet(sales) {
   const shares = percentShares(list.map((p) => p.amount), totalAmount);
   list.forEach((p, i) => {
     rows.push([
+      p.category,
       p.name,
       p.prices.size === 1 ? [...p.prices][0] : '混在',
       p.qty,
@@ -103,7 +105,7 @@ export function productSheet(sales) {
       shares[i],
     ]);
   });
-  rows.push(['合計', '', totalQty, totalAmount, totalAmount === 0 ? 0 : 100]);
+  rows.push(['', '合計', '', totalQty, totalAmount, totalAmount === 0 ? 0 : 100]);
   return { name: '商品別', rows };
 }
 

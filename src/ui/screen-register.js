@@ -21,7 +21,7 @@ function addItem(product) {
   if (found) {
     found.qty += 1;
   } else {
-    state.cart.push({ product_id: product.id, name: product.name, unit_price: product.price, qty: 1 });
+    state.cart.push({ product_id: product.id, name: product.name, unit_price: product.price, qty: 1, category: product.category ?? '' });
   }
   render();
 }

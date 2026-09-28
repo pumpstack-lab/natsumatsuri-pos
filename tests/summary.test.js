@@ -115,30 +115,30 @@ test('productSheet: シート名は「商品別」', () => {
   assert.equal(productSheet(PSALES).name, '商品別');
 });
 
-test('productSheet: 見出しは 商品名/単価/個数/売上/構成比', () => {
-  assert.deepEqual(productSheet(PSALES).rows[0], ['商品名', '単価', '個数', '売上', '構成比(%)']);
+test('productSheet: 見出しは カテゴリー/商品名/単価/個数/売上/構成比(%)', () => {
+  assert.deepEqual(productSheet(PSALES).rows[0], ['カテゴリー', '商品名', '単価', '個数', '売上', '構成比(%)']);
 });
 
 test('productSheet: 商品ごとに個数と売上を集計する', () => {
   const rows = productSheet(PSALES).rows;
-  const hiroshima = rows.find((r) => r[0] === '広島焼き');
-  assert.deepEqual(hiroshima.slice(0, 4), ['広島焼き', 600, 3, 1800]);
+  const hiroshima = rows.find((r) => r[1] === '広島焼き');
+  assert.deepEqual(hiroshima.slice(1, 5), ['広島焼き', 600, 3, 1800]);
 });
 
 test('productSheet: 取消した会計は含めない', () => {
   const rows = productSheet(PSALES).rows;
-  assert.equal(rows.find((r) => r[0] === 'エビフライ（5個入り）'), undefined);
+  assert.equal(rows.find((r) => r[1] === 'エビフライ（5個入り）'), undefined);
 });
 
 test('productSheet: 職員販売は売上に含める', () => {
   const rows = productSheet(PSALES).rows;
-  const frank = rows.find((r) => r[0] === 'フランクフルト');
-  assert.deepEqual(frank.slice(0, 4), ['フランクフルト', 450, 1, 450]);
+  const frank = rows.find((r) => r[1] === 'フランクフルト');
+  assert.deepEqual(frank.slice(1, 5), ['フランクフルト', 450, 1, 450]);
 });
 
 test('productSheet: 売上の大きい順に並ぶ', () => {
   const body = productSheet(PSALES).rows.slice(1, -1);
-  const amounts = body.map((r) => r[3]);
+  const amounts = body.map((r) => r[4]);
   assert.deepEqual(amounts, [...amounts].sort((a, b) => b - a));
 });
 
@@ -146,26 +146,49 @@ test('productSheet: 最終行は合計（個数と売上の総和・構成比100
   const rows = productSheet(PSALES).rows;
   const last = rows[rows.length - 1];
   // 広島焼き1800 + パイン300 + フランク450 = 2550 / 個数 3+1+1 = 5
-  assert.equal(last[0], '合計');
-  assert.equal(last[2], 5);
-  assert.equal(last[3], 2550);
-  assert.equal(last[4], 100);
+  assert.equal(last[1], '合計');
+  assert.equal(last[3], 5);
+  assert.equal(last[4], 2550);
+  assert.equal(last[5], 100);
+});
+
+test('productSheet: 商品のカテゴリーが1列目に出る', () => {
+  const sales = [{ status: 'active', terminal: 'marche', total: 100,
+    items: [{ name: 'ブローチ', unit_price: 100, qty: 1, category: 'こもあん' }] }];
+  const row = productSheet(sales).rows[1];
+  assert.equal(row[0], 'こもあん');
+  assert.equal(row[1], 'ブローチ');
+});
+
+test('productSheet: カテゴリーが無い商品（祭り）は空欄', () => {
+  const sales = [{ status: 'active', terminal: 'food', total: 600,
+    items: [{ name: '広島焼き', unit_price: 600, qty: 1 }] }];
+  const row = productSheet(sales).rows[1];
+  assert.equal(row[0], '');
+  assert.equal(row[1], '広島焼き');
+});
+
+test('productSheet: 合計行もカテゴリー列の分ずれない', () => {
+  const last = productSheet(PSALES).rows.at(-1);
+  assert.equal(last[0], '');
+  assert.equal(last[1], '合計');
+  assert.equal(last[5], 100);
 });
 
 // この xlsx 生成には書式(styles.xml)が無く、0.382 で出すとExcelに「0.382」と
 // 表示されて読めない。パーセントの数値そのもの（38.2）を入れて小数1桁に丸める。
 test('productSheet: 構成比はパーセントの数値・小数1桁', () => {
   const body = productSheet(PSALES).rows.slice(1, -1);
-  const hiroshima = body.find((r) => r[0] === '広島焼き');
-  assert.equal(hiroshima[4], 70.6);  // 1800/2550 = 70.588...
+  const hiroshima = body.find((r) => r[1] === '広島焼き');
+  assert.equal(hiroshima[5], 70.6);  // 1800/2550 = 70.588...
   for (const r of body) {
-    assert.equal(Math.round(r[4] * 10) / 10, r[4], `構成比が小数1桁でない: ${r[0]} ${r[4]}`);
+    assert.equal(Math.round(r[5] * 10) / 10, r[5], `構成比が小数1桁でない: ${r[1]} ${r[5]}`);
   }
 });
 
 test('productSheet: 構成比の各行を足すとちょうど100になる', () => {
   const body = productSheet(PSALES).rows.slice(1, -1);
-  const sum = body.reduce((s, r) => s + r[4], 0);
+  const sum = body.reduce((s, r) => s + r[5], 0);
   assert.equal(Math.round(sum * 10) / 10, 100, `構成比の合計=${sum}`);
 });
 
@@ -175,24 +198,24 @@ test('productSheet: 3等分でも合計100（丸めて99.9にならない）', (
   const third = [{ status: 'active', terminal: 'food', total: 300,
     items: [{ name: 'X', unit_price: 100, qty: 1 }, { name: 'Y', unit_price: 100, qty: 1 }, { name: 'Z', unit_price: 100, qty: 1 }] }];
   const body = productSheet(third).rows.slice(1, -1);
-  const sum = body.reduce((s, r) => s + r[4], 0);
-  assert.equal(Math.round(sum * 10) / 10, 100, `構成比=${body.map((r) => r[4])} 合計=${sum}`);
+  const sum = body.reduce((s, r) => s + r[5], 0);
+  assert.equal(Math.round(sum * 10) / 10, 100, `構成比=${body.map((r) => r[5])} 合計=${sum}`);
 });
 
 test('productSheet: 端数配分しても各行は小数1桁・元の比率から0.1以上ずれない', () => {
   const body = productSheet(PSALES).rows.slice(1, -1);
-  const total = productSheet(PSALES).rows.at(-1)[3];
+  const total = productSheet(PSALES).rows.at(-1)[4];
   for (const r of body) {
-    assert.equal(Math.round(r[4] * 10) / 10, r[4], `小数1桁でない: ${r[0]} ${r[4]}`);
-    const exact = (r[3] / total) * 100;
-    assert.ok(Math.abs(r[4] - exact) <= 0.1 + 1e-9, `${r[0]} 表示${r[4]} vs 実際${exact}`);
+    assert.equal(Math.round(r[5] * 10) / 10, r[5], `小数1桁でない: ${r[1]} ${r[5]}`);
+    const exact = (r[4] / total) * 100;
+    assert.ok(Math.abs(r[5] - exact) <= 0.1 + 1e-9, `${r[1]} 表示${r[5]} vs 実際${exact}`);
   }
 });
 
 test('productSheet: 会計が0件でも見出しと合計行は出る（壊れない）', () => {
   const rows = productSheet([]).rows;
-  assert.deepEqual(rows[0], ['商品名', '単価', '個数', '売上', '構成比(%)']);
-  assert.deepEqual(rows[rows.length - 1], ['合計', '', 0, 0, 0]);
+  assert.deepEqual(rows[0], ['カテゴリー', '商品名', '単価', '個数', '売上', '構成比(%)']);
+  assert.deepEqual(rows[rows.length - 1], ['', '合計', '', 0, 0, 0]);
 });
 
 test('productSheet: 同じ商品が単価違いで混ざったら単価は「混在」にして合算する', () => {
@@ -201,8 +224,8 @@ test('productSheet: 同じ商品が単価違いで混ざったら単価は「混
     { status: 'active', terminal: 'food', total: 300, items: [{ name: '冷やしパイン', unit_price: 300, qty: 1 }] },
     { status: 'active', terminal: 'food', total: 200, items: [{ name: '冷やしパイン', unit_price: 200, qty: 1 }] },
   ];
-  const row = productSheet(mixed).rows.find((r) => r[0] === '冷やしパイン');
-  assert.equal(row[1], '混在', '単価が混在する時は「混在」と出す');
-  assert.equal(row[2], 2);
-  assert.equal(row[3], 500);
+  const row = productSheet(mixed).rows.find((r) => r[1] === '冷やしパイン');
+  assert.equal(row[2], '混在', '単価が混在する時は「混在」と出す');
+  assert.equal(row[3], 2);
+  assert.equal(row[4], 500);
 });
