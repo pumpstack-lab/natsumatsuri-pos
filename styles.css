@@ -70,6 +70,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .pick--food { background: var(--food); }
 .pick--drink { background: var(--drink); }
+.pick--marche { background: #f7f2ff; border-color: #ddd0f0; }
+/* いま選ばれているイベントを一目で分かるようにする（3つ並ぶので迷わないように） */
+.pick.is-current { border-width: 3px; border-color: var(--blue); }
 .pick__icon { font-size: 40px; }
 .pick__name { font-size: 22px; font-weight: 700; }
 .pick__meta { font-size: 13px; opacity: 0.85; }
