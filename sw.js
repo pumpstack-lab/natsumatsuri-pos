@@ -1,4 +1,4 @@
-const CACHE = 'komoreji-pos-2026-09-24_product';
+const CACHE = 'komoreji-pos-2026-09-25_marche';
 const ASSETS = [
   './',
   './index.html',
@@ -24,6 +24,7 @@ const ASSETS = [
   './src/core/csv.js',
   './src/core/products.js',
   './src/core/cash.js',
+  './src/core/events.js',
   './src/ui/state.js',
   './src/ui/screen-merged.js',
   './src/core/syncrow.js',
