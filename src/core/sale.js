@@ -9,6 +9,7 @@ function copyItems(items) {
     name: item.name,
     unit_price: item.unit_price,
     qty: item.qty,
+    category: item.category ?? '',
   }));
 }
 
