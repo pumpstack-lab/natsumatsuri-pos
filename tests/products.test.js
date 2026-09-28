@@ -233,17 +233,39 @@ test('gridDensity: 6品までは3列の大きいボタン', () => {
   assert.equal(gridDensity(6), '');
 });
 
-test('gridDensity: 7〜12品は4列', () => {
+test('gridDensity: 7品以上は4列', () => {
   assert.equal(gridDensity(7), 'reg__grid--dense');
   assert.equal(gridDensity(12), 'reg__grid--dense');
 });
 
-test('gridDensity: 13品以上は5列（iPadでスクロールせず収める）', () => {
-  assert.equal(gridDensity(13), 'reg__grid--dense reg__grid--dense2');
-  assert.equal(gridDensity(16), 'reg__grid--dense reg__grid--dense2');
-  assert.equal(gridDensity(31), 'reg__grid--dense reg__grid--dense2');
+test('gridDensity: 品数が多くても4列より詰めない（祭りの支払い完了が見切れるため）', () => {
+  // 2026-09-28 5列案を実測で撤回。詰めるとグリッドが縮み、その高さを伝票が取って
+  // 祭りの画面で支払い完了ボタンが13〜14pxはみ出した。多い時はスクロールで対応する。
+  assert.equal(gridDensity(16), 'reg__grid--dense');
+  assert.equal(gridDensity(31), 'reg__grid--dense');
 });
 
 test('gridDensity: 0品でも落ちない', () => {
   assert.equal(gridDensity(0), '');
+});
+
+// --- スクロールの続き表示（2026-09-28 オーナー要望「先にも商品があると分かるUI」） ---
+import { hiddenBelowCount } from '../src/core/products.js';
+
+test('hiddenBelowCount: 全部見えていれば0', () => {
+  // 商品16品・1行5列・3行分が見えている → 15品表示、残り1
+  assert.equal(hiddenBelowCount({ total: 15, visible: 15 }), 0);
+});
+
+test('hiddenBelowCount: 見えていない分の品数を返す', () => {
+  assert.equal(hiddenBelowCount({ total: 16, visible: 15 }), 1);
+  assert.equal(hiddenBelowCount({ total: 31, visible: 15 }), 16);
+});
+
+test('hiddenBelowCount: visibleが多すぎても負にならない', () => {
+  assert.equal(hiddenBelowCount({ total: 5, visible: 10 }), 0);
+});
+
+test('hiddenBelowCount: 0品でも落ちない', () => {
+  assert.equal(hiddenBelowCount({ total: 0, visible: 0 }), 0);
 });

@@ -1,6 +1,6 @@
 import { esc } from './escape.js';
 import { state, go, render, resetCart, nextSeq } from './state.js';
-import { availableProducts, categoriesOf, filterByCategory, gridDensity, ALL_CATEGORY } from '../core/products.js';
+import { availableProducts, categoriesOf, filterByCategory, gridDensity, hiddenBelowCount, ALL_CATEGORY } from '../core/products.js';
 import { eventLabel } from '../core/events.js';
 import { putProducts } from '../db.js';
 import { cartTotal, calcChange } from '../core/money.js';
@@ -296,18 +296,26 @@ export function renderRegister() {
         </div>
       ` : `
         ${state.staffMode ? `<div class="modebar modebar--staff"><span>👤 職員販売: ${esc(state.staffName)} さん — 商品を選んで下の支払い方法を押してください</span></div>` : ''}
-        ${cats.length > 0 ? `
-        <div class="cattabs">
-          <button data-cat="${ALL_CATEGORY}" class="${currentCat === ALL_CATEGORY ? 'is-on' : ''}">すべて</button>
-          ${cats.map((c) => `<button data-cat="${esc(c)}" class="${currentCat === c ? 'is-on' : ''}">${esc(c)}</button>`).join('')}
-        </div>` : ''}
-        <div class="reg__grid ${gridDensity(shown.length)}">
-          ${shown.length === 0 ? '<div class="cart__empty">この分類に売れる商品がありません</div>' : shown.map((p) => `
-            <button class="pbtn pbtn--${state.terminal}" data-add="${esc(p.id)}">
-              <span class="pbtn__name">${esc(p.name)}</span>
-              <span class="pbtn__price">${YEN(p.price)}</span>
-            </button>
-          `).join('')}
+        <div class="gridwrap ${cats.length > 0 ? 'gridwrap--tabs' : ''}">
+          ${cats.length > 0 ? `
+          <div class="cattabs">
+            <button data-cat="${ALL_CATEGORY}" class="${currentCat === ALL_CATEGORY ? 'is-on' : ''}">すべて</button>
+            ${cats.map((c) => `<button data-cat="${esc(c)}" class="${currentCat === c ? 'is-on' : ''}">${esc(c)}</button>`).join('')}
+          </div>` : ''}
+          <div class="reg__grid ${gridDensity(shown.length)}">
+            ${shown.length === 0 ? '<div class="cart__empty">この分類に売れる商品がありません</div>' : shown.map((p) => `
+              <button class="pbtn pbtn--${state.terminal}" data-add="${esc(p.id)}">
+                <span class="pbtn__name">${esc(p.name)}</span>
+                <span class="pbtn__price">${YEN(p.price)}</span>
+              </button>
+            `).join('')}
+          </div>
+          <!-- 下にまだ商品があることを知らせる。実際のスクロール量で出し入れするので
+               描画時は隠しておき、updateScrollHint() が測って表示する
+               （2026-09-28 オーナー要望「スクロール先にも商品があると分かるUIに」）。 -->
+          <div class="gridwrap__more" data-more hidden>
+            <span class="gridwrap__more-label">↓ あと<strong data-more-n>0</strong>品</span>
+          </div>
         </div>
       `}
       <div class="lower">
@@ -453,6 +461,27 @@ export function renderRegister() {
     btn.addEventListener('click', () => completeStaff(btn.dataset.staffpay));
   });
   el.querySelector('[data-go2]').addEventListener('click', () => go('history'));
+  // 下に隠れている商品の数を実測して「↓ あとN品」を出す。
+  // 一番下までスクロールしたら消す（残っていると「まだある」と誤解させる）。
+  const grid = el.querySelector('.reg__grid');
+  const more = el.querySelector('[data-more]');
+  if (grid && more) {
+    const countBelow = () => {
+      const btns = [...grid.querySelectorAll('.pbtn')];
+      const gb = grid.getBoundingClientRect();
+      const below = btns.filter((b) => b.getBoundingClientRect().bottom > gb.bottom + 1).length;
+      return hiddenBelowCount({ total: btns.length, visible: btns.length - below });
+    };
+    const updateScrollHint = () => {
+      const n = countBelow();
+      more.hidden = n === 0;
+      if (n > 0) el.querySelector('[data-more-n]').textContent = n;
+    };
+    grid.addEventListener('scroll', updateScrollHint, { passive: true });
+    // 描画直後はレイアウトが確定していないので次のフレームで測る
+    requestAnimationFrame(updateScrollHint);
+  }
+
   el.querySelectorAll('[data-cat]').forEach((btn) => {
     btn.addEventListener('click', () => {
       state.category = btn.dataset.cat === ALL_CATEGORY ? null : btn.dataset.cat;

@@ -98,13 +98,21 @@ export function categoriesOf(products) {
   return seen;
 }
 
-// 商品グリッドの列数を商品数で決める。iPadの縦に収めてスクロールを避けるため。
-// 2026-09-28 実測: マルシェ「こもれび」16品が 1080x620 で4品・1024x535 で8品
-// 画面外に出ていた。当日いちばん売れるカテゴリーで毎回スクロールさせない。
+// 商品グリッドの列数を商品数で決める。
+// 2026-09-28: 13品以上を5列にする案を実測して撤回した。ボタンが小さくなった分
+// グリッドが縮み、その高さを伝票エリアが取って**祭りの画面で支払い完了ボタンが
+// 13〜14px はみ出した**（変更前は -5px で収まっていた）。
+// 商品が多いカテゴリーはスクロールで対応し、下に続きがあることは
+// 「↓ あとN品」の表示で知らせる（オーナー指示）。
 export function gridDensity(count) {
-  if (count >= 13) return 'reg__grid--dense reg__grid--dense2';
   if (count >= 7) return 'reg__grid--dense';
   return '';
+}
+
+// 商品グリッドの下に隠れている品数。「あと○品」の表示に使う。
+// 2026-09-28 オーナー要望「スクロール先にも商品があると分かるUIにしてほしい」。
+export function hiddenBelowCount({ total, visible }) {
+  return Math.max(0, total - visible);
 }
 
 // 選択中のカテゴリーで商品を絞る。ALL_CATEGORY / 未指定なら絞らない。

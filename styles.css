@@ -94,19 +94,58 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 /* カテゴリータブ。マルシェのように商品が多いイベントで使う。
    横に入りきらない時は横スクロール（縦を食うと商品グリッドが潰れるため）。 */
 .cattabs {
-  display: flex; gap: 6px; padding: 8px 10px 0;
+  display: flex; gap: 6px; padding: 5px 10px 0;
   overflow-x: auto; flex: 0 0 auto;
 }
+/* グリッドはタブの残りを使う。min-height を効かせないと縮まずタブを押し出す */
+.gridwrap .reg__grid { flex: 1 1 auto; min-height: 0; }
 .cattabs button {
-  flex: 0 0 auto; padding: 10px 16px; min-height: 44px;
+  /* ⚠️ この行が高くなるほど伝票エリアが縮み、「支払い完了」が画面外に出る
+     （2026-09-28 実測: 高さ56pxで1080x620のマルシェが+44pxはみ出した）。
+     タップしやすさ（min-height 40px）と両立する上限がここ。 */
+  flex: 0 0 auto; padding: 7px 15px; min-height: 40px;
   background: #fff; border: 2px solid var(--line); border-radius: 999px;
-  font-size: 16px; font-weight: 700; color: var(--gray); white-space: nowrap;
+  font-size: 15px; font-weight: 700; color: var(--gray); white-space: nowrap;
 }
 .cattabs button.is-on { background: var(--blue); border-color: var(--blue); color: #fff; }
+/* 商品グリッドの入れ物。ヒントを重ねるため position を持つ。 */
+/* 下限はここで持つ。中の .reg__grid には min-height を持たせない
+   （持たせるとタブを足した分そのまま高くなり、右パネルを押し出す）。
+   ⚠️ 右パネル（預かり金＋支払い完了）は376px必要。この下限が大きいほど
+   右パネルの取り分が減り、「支払い完了」がスクロールしないと押せなくなる
+   （2026-09-28 実測）。タブがある時はタブの高さぶん下限を下げて相殺する。 */
+.gridwrap { position: relative; flex: 0 1 auto; min-height: 172px; display: flex; flex-direction: column; overflow: hidden; }
+/* :has() は環境差があるため使わず、JSがクラスを付ける（過去に2回ハマった） */
+/* ⚠️ ここが肝。flex:0 1 auto は「中身のぶんだけ使う」ので、中身が多いと縮まず
+   右パネル（預かり金＋支払い完了＝376px必要）を押し出す。
+   商品グリッドはスクロールできるので、上限を切って残りを必ず会計側へ渡す。
+   400px = 画面620pxからバー57px・右パネル376pxを引いた残りに、
+   大きい画面ではもっと使えるよう余裕を持たせた値（min()で画面に応じて決まる）。 */
+.gridwrap--tabs { min-height: 116px; max-height: min(400px, calc(100vh - 57px - 376px + 220px)); }
+
+
+}
+/* 下にまだ商品があることを示すバッジ。
+   ⚠️ 高さを食う行にすると、その分だけ伝票エリアが縮んで
+   「支払い完了」ボタンが画面外に出る（2026-09-28 実測で祭りが+14px はみ出した）。
+   そのため絶対配置でグリッドに重ね、レイアウトの高さは一切奪わない。
+   右下の小さなバッジにして商品名に被らないようにする。 */
+.gridwrap__more {
+  position: absolute; right: 10px; bottom: 6px;
+  pointer-events: none; z-index: 2;
+}
+.gridwrap__more-label {
+  background: var(--blue); color: #fff; border-radius: 999px;
+  padding: 3px 12px; font-size: 12px; font-weight: 700; line-height: 1.5;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.28);
+  white-space: nowrap;
+}
+.gridwrap__more-label strong { font-size: 14px; margin: 0 2px; }
+
 .reg__grid {
   /* 中身の分だけ縦を使い、余った高さは伝票に回す。
      商品が多い時だけここがスクロールする（縮む下限は 30% に留める）。 */
-  flex: 0 1 auto; min-height: 172px; overflow-y: auto;
+  flex: 0 1 auto; min-height: 0; overflow-y: auto;
   display: grid; grid-template-columns: repeat(3, 1fr);
   gap: 8px; padding: 10px; align-content: start;
 }
@@ -125,11 +164,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .reg__grid--dense .pbtn { min-height: 64px; padding: 10px 4px; }
 .reg__grid--dense .pbtn__name { font-size: 18px; }
 .reg__grid--dense .pbtn__price { font-size: 14px; margin-top: 3px; }
-/* 13品以上のカテゴリー用。5列にしてiPadの縦に収める（2026-09-28 こもれび16品対策） */
-.reg__grid--dense2 { grid-template-columns: repeat(5, 1fr); gap: 6px; }
-.reg__grid--dense2 .pbtn { min-height: 56px; padding: 8px 3px; }
-.reg__grid--dense2 .pbtn__name { font-size: 15px; line-height: 1.2; }
-.reg__grid--dense2 .pbtn__price { font-size: 13px; margin-top: 2px; }
 .pbtn__name { font-size: 22px; font-weight: 700; display: block; line-height: 1.25; letter-spacing: -0.01em; }
 .pbtn__price { font-size: 16px; color: var(--gray); margin-top: 5px; display: block; font-weight: 600; }
 
@@ -189,6 +223,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 /* --- 右パネル: 預かり・お釣りの常設表示 ---
    情報行はコンパクトに。ただし「現金でもらう」「お釣り」の金額は最重要なので20px以上を維持 */
 .cashinfo { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
+
+/* カテゴリータブは商品グリッドの高さの中に収める（.gridwrap が flex で分け合う）。
+   ⚠️ タブを独立した行として足すと、その分だけ右パネル（預かり金＋支払い完了）の
+   取り分が減り、実測で「支払い完了」が画面外に出た（2026-09-28・最大+44px）。
+   右パネルは376px必要で、祭りでもほぼ余裕がない。タブの高さは
+   グリッドから借りること。 */
 .pay__done--panel { width: 100%; margin-top: 8px; }
 /* 商品券の使用表示（紫）と、商品券を引いた「現金でもらう」額（最重要なので黒地） */
 .pay__voucher {
