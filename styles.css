@@ -123,8 +123,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
    大きい画面ではもっと使えるよう余裕を持たせた値（min()で画面に応じて決まる）。 */
 .gridwrap--tabs { min-height: 116px; max-height: min(400px, calc(100vh - 57px - 376px + 220px)); }
 
-
-}
 /* 下にまだ商品があることを示すバッジ。
    ⚠️ 高さを食う行にすると、その分だけ伝票エリアが縮んで
    「支払い完了」ボタンが画面外に出る（2026-09-28 実測で祭りが+14px はみ出した）。
