@@ -169,3 +169,41 @@ test('filterByCategory: 未指定(null)なら全部返す', () => {
 test('filterByCategory: 存在しないカテゴリーなら空（画面は空表示になるだけで落ちない）', () => {
   assert.deepEqual(filterByCategory(MARCHE, 'ない分類'), []);
 });
+
+test('DEFAULT_PRODUCTS: マルシェの商品が28品ある', () => {
+  const marche = DEFAULT_PRODUCTS.filter((p) => p.terminal === 'marche');
+  assert.equal(marche.length, 28);
+});
+
+test('DEFAULT_PRODUCTS: マルシェのカテゴリーは受領順の5つ', () => {
+  const marche = DEFAULT_PRODUCTS.filter((p) => p.terminal === 'marche');
+  assert.deepEqual(categoriesOf(marche), ['レスポ', 'こもあん', 'こもれび', 'ベーカリー', 'B型']);
+});
+
+test('DEFAULT_PRODUCTS: マルシェの商品は全部カテゴリーを持つ', () => {
+  const marche = DEFAULT_PRODUCTS.filter((p) => p.terminal === 'marche');
+  for (const p of marche) assert.ok(p.category, `${p.name} にカテゴリーが無い`);
+});
+
+test('DEFAULT_PRODUCTS: たわしはひらがなで統一（オーナー確定2026-09-25）', () => {
+  const names = DEFAULT_PRODUCTS.map((p) => p.name);
+  assert.ok(names.includes('アクリルたわし（スマイル）'));
+  assert.ok(names.includes('アクリルたわし（くま）'));
+  assert.ok(!names.some((n) => n.includes('タワシ')), 'カタカナのタワシが残っている');
+});
+
+test('DEFAULT_PRODUCTS: 祭りの商品は今までどおりカテゴリーを持たない', () => {
+  const festival = DEFAULT_PRODUCTS.filter((p) => p.terminal !== 'marche');
+  assert.equal(festival.length, 15);
+  for (const p of festival) assert.equal(p.category, undefined, `${p.name} に予期しないカテゴリー`);
+});
+
+test('DEFAULT_PRODUCTS: idが全商品で重複しない', () => {
+  const ids = DEFAULT_PRODUCTS.map((p) => p.id);
+  assert.equal(new Set(ids).size, ids.length);
+});
+
+test('DEFAULT_PRODUCTS: マルシェの並び順は0から連番（タブ順が崩れない）', () => {
+  const marche = DEFAULT_PRODUCTS.filter((p) => p.terminal === 'marche');
+  assert.deepEqual(marche.map((p) => p.sort_order), [...Array(28).keys()]);
+});

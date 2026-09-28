@@ -1,4 +1,37 @@
 export const DEFAULT_PRODUCTS = [
+  // --- マルシェ（2026-09-25 オーナー受領の28品）---
+  // ⚠️ 価格は全品「暫定 ¥100」。確定したら price を書き換えて PRODUCTS_SEED_VERSION を上げる
+  //    （上げないと既にアプリを開いた端末に反映されない）。
+  //    当日の朝以降は seed version を上げないこと（現場で直した価格を上書きしてしまう）。
+  { id: 'm01', terminal: 'marche', name: 'ハロウィンチャーム', price: 100, category: 'レスポ', sort_order: 0, is_available: true },
+  { id: 'm02', terminal: 'marche', name: 'ビーズブレスレット', price: 100, category: 'レスポ', sort_order: 1, is_available: true },
+  { id: 'm03', terminal: 'marche', name: 'アクリルたわし（スマイル）', price: 100, category: 'こもあん', sort_order: 2, is_available: true },
+  { id: 'm04', terminal: 'marche', name: 'アクリルたわし（くま）', price: 100, category: 'こもあん', sort_order: 3, is_available: true },
+  { id: 'm05', terminal: 'marche', name: 'キーホルダー（スマイル）', price: 100, category: 'こもあん', sort_order: 4, is_available: true },
+  { id: 'm06', terminal: 'marche', name: 'キーホルダー（肉球）', price: 100, category: 'こもあん', sort_order: 5, is_available: true },
+  { id: 'm07', terminal: 'marche', name: 'キーホルダー（お花）', price: 100, category: 'こもあん', sort_order: 6, is_available: true },
+  { id: 'm08', terminal: 'marche', name: 'ブローチ', price: 100, category: 'こもあん', sort_order: 7, is_available: true },
+  { id: 'm09', terminal: 'marche', name: 'ボタンかざり', price: 100, category: 'こもあん', sort_order: 8, is_available: true },
+  { id: 'm10', terminal: 'marche', name: 'キーホルダー（紙粘土）', price: 100, category: 'こもれび', sort_order: 9, is_available: true },
+  { id: 'm11', terminal: 'marche', name: 'アクリルキーホルダー', price: 100, category: 'こもれび', sort_order: 10, is_available: true },
+  { id: 'm12', terminal: 'marche', name: '編み物', price: 100, category: 'こもれび', sort_order: 11, is_available: true },
+  { id: 'm13', terminal: 'marche', name: 'みかんちゃん大', price: 100, category: 'こもれび', sort_order: 12, is_available: true },
+  { id: 'm14', terminal: 'marche', name: 'みかんちゃん小', price: 100, category: 'こもれび', sort_order: 13, is_available: true },
+  { id: 'm15', terminal: 'marche', name: 'すだちとはちみつシロップ', price: 100, category: 'こもれび', sort_order: 14, is_available: true },
+  { id: 'm16', terminal: 'marche', name: 'すすめご飯', price: 100, category: 'こもれび', sort_order: 15, is_available: true },
+  { id: 'm17', terminal: 'marche', name: 'ちゅるちゅるみかん', price: 100, category: 'こもれび', sort_order: 16, is_available: true },
+  { id: 'm18', terminal: 'marche', name: 'ノンオイルドレッシング', price: 100, category: 'こもれび', sort_order: 17, is_available: true },
+  { id: 'm19', terminal: 'marche', name: 'おいポン酢', price: 100, category: 'こもれび', sort_order: 18, is_available: true },
+  { id: 'm20', terminal: 'marche', name: 'すだちポン酢', price: 100, category: 'こもれび', sort_order: 19, is_available: true },
+  { id: 'm21', terminal: 'marche', name: '一味シリーズ', price: 100, category: 'こもれび', sort_order: 20, is_available: true },
+  { id: 'm22', terminal: 'marche', name: 'カレンダー', price: 100, category: 'こもれび', sort_order: 21, is_available: true },
+  { id: 'm23', terminal: 'marche', name: 'とんだバナナ１本', price: 100, category: 'ベーカリー', sort_order: 22, is_available: true },
+  { id: 'm24', terminal: 'marche', name: 'とんだバナナカット', price: 100, category: 'ベーカリー', sort_order: 23, is_available: true },
+  { id: 'm25', terminal: 'marche', name: 'トマト&バジルのプリッツ', price: 100, category: 'ベーカリー', sort_order: 24, is_available: true },
+  { id: 'm26', terminal: 'marche', name: '晩白柚とピスタチオのビスコッティ', price: 100, category: 'ベーカリー', sort_order: 25, is_available: true },
+  { id: 'm27', terminal: 'marche', name: '魚魚', price: 100, category: 'B型', sort_order: 26, is_available: true },
+  { id: 'm28', terminal: 'marche', name: 'こもだれ', price: 100, category: 'B型', sort_order: 27, is_available: true },
+
   // 2026-09-16 行事計画書の実価格です。
   { id: 'f1', terminal: 'food', name: '冷やしパイン', price: 300, sort_order: 0, is_available: true },
   { id: 'f2', terminal: 'food', name: '広島焼き', price: 600, sort_order: 1, is_available: true },
@@ -18,7 +51,7 @@ export const DEFAULT_PRODUCTS = [
   { id: 'd10', terminal: 'drink', name: 'キラキラ おかわり', price: 250, sort_order: 9, is_available: true },
 ];
 
-export const PRODUCTS_SEED_VERSION = '2026-09-16';
+export const PRODUCTS_SEED_VERSION = '2026-09-25-marche';
 
 // stored（IndexedDBの現在値）に defaults の最新の名前・価格・terminal を反映する。
 // is_available（品切れ状態）と sort_order（並び替え結果）は運用中の実績なので保持する。
