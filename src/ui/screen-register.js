@@ -1,6 +1,6 @@
 import { esc } from './escape.js';
 import { state, go, render, resetCart, nextSeq } from './state.js';
-import { availableProducts } from '../core/products.js';
+import { availableProducts, categoriesOf, filterByCategory, ALL_CATEGORY } from '../core/products.js';
 import { putProducts } from '../db.js';
 import { cartTotal, calcChange } from '../core/money.js';
 import { createSale, voidSale } from '../core/sale.js';
@@ -238,6 +238,12 @@ export function renderRegister() {
   el.className = 'screen';
 
   const products = availableProducts(state.products, state.terminal);
+  // カテゴリータブ。カテゴリーを持たないイベント（祭り）では cats が空になり、
+  // タブを描画しないので既存の画面と同じ見た目になる。
+  const myProducts = state.products.filter((x) => x.terminal === state.terminal);
+  const cats = categoriesOf(myProducts);
+  const currentCat = state.category ?? ALL_CATEGORY;
+  const shown = cats.length === 0 ? products : filterByCategory(products, currentCat);
   const allProducts = state.products
     .filter((x) => x.terminal === state.terminal)
     .sort((a, b) => a.sort_order - b.sort_order);
@@ -289,8 +295,13 @@ export function renderRegister() {
         </div>
       ` : `
         ${state.staffMode ? `<div class="modebar modebar--staff"><span>👤 職員販売: ${esc(state.staffName)} さん — 商品を選んで下の支払い方法を押してください</span></div>` : ''}
-        <div class="reg__grid ${products.length > 6 ? 'reg__grid--dense' : ''}">
-          ${products.map((p) => `
+        ${cats.length > 0 ? `
+        <div class="cattabs">
+          <button data-cat="${ALL_CATEGORY}" class="${currentCat === ALL_CATEGORY ? 'is-on' : ''}">すべて</button>
+          ${cats.map((c) => `<button data-cat="${esc(c)}" class="${currentCat === c ? 'is-on' : ''}">${esc(c)}</button>`).join('')}
+        </div>` : ''}
+        <div class="reg__grid ${shown.length > 6 ? 'reg__grid--dense' : ''}">
+          ${shown.length === 0 ? '<div class="cart__empty">この分類に売れる商品がありません</div>' : shown.map((p) => `
             <button class="pbtn pbtn--${state.terminal}" data-add="${esc(p.id)}">
               <span class="pbtn__name">${esc(p.name)}</span>
               <span class="pbtn__price">${YEN(p.price)}</span>
@@ -441,6 +452,12 @@ export function renderRegister() {
     btn.addEventListener('click', () => completeStaff(btn.dataset.staffpay));
   });
   el.querySelector('[data-go2]').addEventListener('click', () => go('history'));
+  el.querySelectorAll('[data-cat]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.category = btn.dataset.cat === ALL_CATEGORY ? null : btn.dataset.cat;
+      render();
+    });
+  });
   el.querySelectorAll('[data-add]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const p = products.find((x) => x.id === btn.dataset.add);

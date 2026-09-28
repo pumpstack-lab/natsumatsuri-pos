@@ -14,6 +14,7 @@ export const state = {
   historyTab: 'list',
   editingSaleId: null,
   keypadOpen: false,
+  category: null,          // 選択中のカテゴリー（null = すべて）。端末には保存しない
 };
 
 const listeners = [];
@@ -50,6 +51,7 @@ export function resetCart() {
   state.otherAmount = 0;
   state.vouchers = 0;
   state.keypadOpen = false;
+  state.category = null;   // 会計が終わったら先頭タブ（すべて）に戻す（オーナー確定2026-09-25）
 }
 
 export function nextSeq(terminal) {

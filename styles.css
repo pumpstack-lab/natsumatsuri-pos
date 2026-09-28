@@ -91,6 +91,18 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 /* --- 注文登録 --- */
 .reg { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+/* カテゴリータブ。マルシェのように商品が多いイベントで使う。
+   横に入りきらない時は横スクロール（縦を食うと商品グリッドが潰れるため）。 */
+.cattabs {
+  display: flex; gap: 6px; padding: 8px 10px 0;
+  overflow-x: auto; flex: 0 0 auto;
+}
+.cattabs button {
+  flex: 0 0 auto; padding: 10px 16px; min-height: 44px;
+  background: #fff; border: 2px solid var(--line); border-radius: 999px;
+  font-size: 16px; font-weight: 700; color: var(--gray); white-space: nowrap;
+}
+.cattabs button.is-on { background: var(--blue); border-color: var(--blue); color: #fff; }
 .reg__grid {
   /* 中身の分だけ縦を使い、余った高さは伝票に回す。
      商品が多い時だけここがスクロールする（縮む下限は 30% に留める）。 */
