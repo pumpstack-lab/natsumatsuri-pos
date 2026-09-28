@@ -1,6 +1,6 @@
 import { esc } from './escape.js';
 import { state, go, render, resetCart, nextSeq } from './state.js';
-import { availableProducts, categoriesOf, filterByCategory, ALL_CATEGORY } from '../core/products.js';
+import { availableProducts, categoriesOf, filterByCategory, gridDensity, ALL_CATEGORY } from '../core/products.js';
 import { eventLabel } from '../core/events.js';
 import { putProducts } from '../db.js';
 import { cartTotal, calcChange } from '../core/money.js';
@@ -283,7 +283,7 @@ export function renderRegister() {
           <span>🚫 品切れ登録: 切り替える商品をタップして「確定」を押してください（品切れ中の商品を押すと復活します）</span>
           <button class="modebar__ok" data-soldout-ok>確定</button>
         </div>
-        <div class="reg__grid ${allProducts.length > 6 ? 'reg__grid--dense' : ''}">
+        <div class="reg__grid ${gridDensity(allProducts.length)}">
           ${allProducts.map((p) => {
             const flagged = soldoutDraft && soldoutDraft[p.id];
             const willBeOff = flagged ? p.is_available : !p.is_available;
@@ -301,7 +301,7 @@ export function renderRegister() {
           <button data-cat="${ALL_CATEGORY}" class="${currentCat === ALL_CATEGORY ? 'is-on' : ''}">すべて</button>
           ${cats.map((c) => `<button data-cat="${esc(c)}" class="${currentCat === c ? 'is-on' : ''}">${esc(c)}</button>`).join('')}
         </div>` : ''}
-        <div class="reg__grid ${shown.length > 6 ? 'reg__grid--dense' : ''}">
+        <div class="reg__grid ${gridDensity(shown.length)}">
           ${shown.length === 0 ? '<div class="cart__empty">この分類に売れる商品がありません</div>' : shown.map((p) => `
             <button class="pbtn pbtn--${state.terminal}" data-add="${esc(p.id)}">
               <span class="pbtn__name">${esc(p.name)}</span>

@@ -170,9 +170,25 @@ test('filterByCategory: 存在しないカテゴリーなら空（画面は空�
   assert.deepEqual(filterByCategory(MARCHE, 'ない分類'), []);
 });
 
-test('DEFAULT_PRODUCTS: マルシェの商品が28品ある', () => {
+test('DEFAULT_PRODUCTS: マルシェの商品が31品ある', () => {
+  // 2026-09-28 一味シリーズを3種（一味KAN/すだちの一撃/ひ〜の用心）に分割し
+  // ケチャップを追加したため 28 → 31（オーナー確定）
   const marche = DEFAULT_PRODUCTS.filter((p) => p.terminal === 'marche');
-  assert.equal(marche.length, 28);
+  assert.equal(marche.length, 31);
+});
+
+test('DEFAULT_PRODUCTS: 価格が確定した11品は正しい税込価格が入る', () => {
+  // 2026-09-28 オーナー受領（税込）。残りは暫定¥100
+  const want = {
+    '魚魚': 750, '一味KAN': 680, 'こもだれ': 680, 'すだちの一撃': 680,
+    'ひ〜の用心': 680, 'すだちポン酢': 720, 'おい！ポン酢': 720,
+    'すだち×はちみつシロップ': 800, 'ケチャップ': 680, 'ススメご飯': 720,
+    'ノンオイルドレッシング': 720,
+  };
+  const byName = Object.fromEntries(DEFAULT_PRODUCTS.map((p) => [p.name, p.price]));
+  for (const [name, price] of Object.entries(want)) {
+    assert.equal(byName[name], price, `${name} の価格`);
+  }
 });
 
 test('DEFAULT_PRODUCTS: マルシェのカテゴリーは受領順の5つ', () => {
@@ -205,5 +221,29 @@ test('DEFAULT_PRODUCTS: idが全商品で重複しない', () => {
 
 test('DEFAULT_PRODUCTS: マルシェの並び順は0から連番（タブ順が崩れない）', () => {
   const marche = DEFAULT_PRODUCTS.filter((p) => p.terminal === 'marche');
-  assert.deepEqual(marche.map((p) => p.sort_order), [...Array(28).keys()]);
+  const orders = marche.map((p) => p.sort_order).sort((a, b) => a - b);
+  assert.deepEqual(orders, [...Array(31).keys()], '欠番や重複があるとタブ順が崩れる');
+});
+
+// --- 商品グリッドの密度（2026-09-28 こもれび16品が画面から溢れた実測より） ---
+import { gridDensity } from '../src/core/products.js';
+
+test('gridDensity: 6品までは3列の大きいボタン', () => {
+  assert.equal(gridDensity(1), '');
+  assert.equal(gridDensity(6), '');
+});
+
+test('gridDensity: 7〜12品は4列', () => {
+  assert.equal(gridDensity(7), 'reg__grid--dense');
+  assert.equal(gridDensity(12), 'reg__grid--dense');
+});
+
+test('gridDensity: 13品以上は5列（iPadでスクロールせず収める）', () => {
+  assert.equal(gridDensity(13), 'reg__grid--dense reg__grid--dense2');
+  assert.equal(gridDensity(16), 'reg__grid--dense reg__grid--dense2');
+  assert.equal(gridDensity(31), 'reg__grid--dense reg__grid--dense2');
+});
+
+test('gridDensity: 0品でも落ちない', () => {
+  assert.equal(gridDensity(0), '');
 });

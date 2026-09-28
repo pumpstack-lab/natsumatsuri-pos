@@ -125,6 +125,11 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .reg__grid--dense .pbtn { min-height: 64px; padding: 10px 4px; }
 .reg__grid--dense .pbtn__name { font-size: 18px; }
 .reg__grid--dense .pbtn__price { font-size: 14px; margin-top: 3px; }
+/* 13品以上のカテゴリー用。5列にしてiPadの縦に収める（2026-09-28 こもれび16品対策） */
+.reg__grid--dense2 { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.reg__grid--dense2 .pbtn { min-height: 56px; padding: 8px 3px; }
+.reg__grid--dense2 .pbtn__name { font-size: 15px; line-height: 1.2; }
+.reg__grid--dense2 .pbtn__price { font-size: 13px; margin-top: 2px; }
 .pbtn__name { font-size: 22px; font-weight: 700; display: block; line-height: 1.25; letter-spacing: -0.01em; }
 .pbtn__price { font-size: 16px; color: var(--gray); margin-top: 5px; display: block; font-weight: 600; }
 

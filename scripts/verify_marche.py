@@ -66,7 +66,7 @@ with sync_playwright() as p:
         tabs = pg.evaluate("()=>[...document.querySelectorAll('[data-cat]')].map(b=>b.textContent.trim())")
         check(tabs == EXPECT_CATS, f"[{w}x{h}] タブ={tabs}")
         n_all = pg.evaluate("()=>document.querySelectorAll('.pbtn').length")
-        check(n_all == 28, f"[{w}x{h}] 「すべて」の商品数={n_all}（期待28）")
+        check(n_all == 31, f"[{w}x{h}] 「すべて」の商品数={n_all}（期待31）")
 
         # カテゴリーを選ぶと商品が入れ替わる
         pg.click("[data-cat='こもあん']"); pg.wait_for_timeout(300)
@@ -77,13 +77,25 @@ with sync_playwright() as p:
         on = pg.evaluate("()=>[...document.querySelectorAll('[data-cat].is-on')].map(b=>b.textContent.trim())")
         check(on == ["こもあん"], f"[{w}x{h}] 選択中のタブ={on}")
 
+        # 一味シリーズは3種に分かれている（2026-09-28 オーナー確定）
+        pg.click("[data-cat='こもれび']"); pg.wait_for_timeout(300)
+        knames = pg.evaluate("()=>[...document.querySelectorAll('.pbtn__name')].map(x=>x.textContent.trim())")
+        for n in ["一味KAN", "すだちの一撃", "ひ〜の用心", "ケチャップ"]:
+            check(n in knames, f"[{w}x{h}] こもれびに『{n}』がある")
+        prices = pg.evaluate("""()=>Object.fromEntries([...document.querySelectorAll('.pbtn')]
+          .map(b=>[b.querySelector('.pbtn__name').textContent.trim(),
+                   b.querySelector('.pbtn__price').textContent.trim()]))""")
+        check(prices.get("すだち×はちみつシロップ") == "¥800", f"[{w}x{h}] 価格表示 すだち×はちみつシロップ={prices.get('すだち×はちみつシロップ')}")
+        check(prices.get("おい！ポン酢") == "¥720", f"[{w}x{h}] 価格表示 おい！ポン酢={prices.get('おい！ポン酢')}")
+
         pg.click("[data-cat='B型']"); pg.wait_for_timeout(300)
         names = pg.evaluate("()=>[...document.querySelectorAll('.pbtn__name')].map(x=>x.textContent.trim())")
         check(sorted(names) == sorted(["魚魚", "こもだれ"]), f"[{w}x{h}] B型の商品={names}")
 
         # --- 会計を通す → 先頭タブに戻る ---
         pg.click(".pbtn"); pg.wait_for_timeout(150)
-        pg.click("[data-cash='100']"); pg.wait_for_timeout(150)
+        # 商品の価格に足りる預かりを入れる（価格が上がっても足りるよう¥1,000）
+        pg.click("[data-cash='1000']"); pg.wait_for_timeout(150)
         done = pg.evaluate("()=>document.querySelector('[data-done]').disabled")
         check(not done, f"[{w}x{h}] 支払い完了が押せる")
         pg.click("[data-done]"); pg.wait_for_timeout(700)
