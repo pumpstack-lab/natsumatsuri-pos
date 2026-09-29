@@ -50,6 +50,12 @@ with sync_playwright() as p:
         errs = []; pg.on("pageerror", lambda e: errs.append(str(e)))
         pg.goto(URL); pg.wait_for_timeout(900)
 
+        # 後片付けで既存データを巻き込まないよう、開始時点のIDを控えておく
+        # （feedback_prod_e2e_no_destructive_cleanup: 消すのは自分が作った行だけ）
+        before_ids = set(pg.evaluate("""()=>new Promise(res=>{const r=indexedDB.open('natsumatsuri-pos');
+          r.onsuccess=()=>{const q=r.result.transaction('sales').objectStore('sales').getAll();
+          q.onsuccess=()=>res(q.result.map(s=>s.id))}})"""))
+
         # --- トップがイベント選択になっている ---
         h1 = pg.evaluate("()=>document.querySelector('.top__lead h1').textContent.trim()")
         check(h1 == "どのイベントですか？", f"[{w}x{h}] トップの見出し={h1!r}")
@@ -139,16 +145,18 @@ with sync_playwright() as p:
 
         check(errs == [], f"[{w}x{h}] JSエラー={errs}")
 
-        # --- 後片付け: 作った会計のIDだけ消す ---
-        ids = pg.evaluate("""()=>new Promise(res=>{const r=indexedDB.open('natsumatsuri-pos');
+        # --- 後片付け: このスクリプトが作った分（開始時点との差分）だけ消す ---
+        now_ids = pg.evaluate("""()=>new Promise(res=>{const r=indexedDB.open('natsumatsuri-pos');
           r.onsuccess=()=>{const q=r.result.transaction('sales').objectStore('sales').getAll();
           q.onsuccess=()=>res(q.result.map(s=>s.id))}})""")
+        ids = [i for i in now_ids if i not in before_ids]
+        check(len(now_ids) - len(ids) == len(before_ids), f"[{w}x{h}] 既存の会計{len(before_ids)}件には触れない")
         pg.evaluate("""(ids)=>new Promise(res=>{const r=indexedDB.open('natsumatsuri-pos');
           r.onsuccess=()=>{const tx=r.result.transaction('sales','readwrite');const st=tx.objectStore('sales');
           ids.forEach(i=>st.delete(i));tx.oncomplete=()=>res(1)}})""", ids)
         left = pg.evaluate("""()=>new Promise(res=>{const r=indexedDB.open('natsumatsuri-pos');
           r.onsuccess=()=>{const q=r.result.transaction('sales').objectStore('sales').count();q.onsuccess=()=>res(q.result)}})""")
-        check(left == 0, f"[{w}x{h}] 後片付け後の残件数={left}")
+        check(left == len(before_ids), f"[{w}x{h}] 後片付け後は開始時と同じ{left}件")
         ctx.close()
     b.close()
 

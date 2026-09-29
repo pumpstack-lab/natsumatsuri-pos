@@ -70,9 +70,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .pick--food { background: var(--food); }
 .pick--drink { background: var(--drink); }
-.pick--marche { background: #f7f2ff; border-color: #ddd0f0; }
-/* いま選ばれているイベントを一目で分かるようにする（3つ並ぶので迷わないように） */
-.pick.is-current { border-width: 3px; border-color: var(--blue); }
+/* ⚠️ .pick は color:#fff なので背景は濃色にする。
+   淡色(#f7f2ff)にしたら白地に白でコントラスト1.10:1になり読めなかった
+   （2026-09-28 getComputedStyleで実測）。 */
+.pick--marche { background: #6b3fa0; }
+/* いま選ばれているイベントを一目で分かるようにする（3つ並ぶので迷わないように）。
+   .pick はボタンのリセットで border:none のため style も指定しないと描画されない。 */
+.pick.is-current { border: 3px solid #fff; box-shadow: 0 0 0 3px var(--blue); }
 .pick__icon { font-size: 40px; }
 .pick__name { font-size: 22px; font-weight: 700; }
 .pick__meta { font-size: 13px; opacity: 0.85; }
@@ -122,6 +126,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
    400px = 画面620pxからバー57px・右パネル376pxを引いた残りに、
    大きい画面ではもっと使えるよう余裕を持たせた値（min()で画面に応じて決まる）。 */
 .gridwrap--tabs { min-height: 116px; max-height: min(400px, calc(100vh - 57px - 376px + 220px)); }
+/* 法人iPad（実測1080x620）はバー57px＋右パネル376pxで残り187px。
+   タブ45px＋商品1段でここに収める。商品はスクロールで足りる（「↓ あとN品」で誘導）。
+   2026-08-24に決めた優先順位「①完了ボタンが必ず押せる ②商品が全部見える」に従う。 */
+@media (max-height: 700px) {
+  .gridwrap--tabs { max-height: 187px; }
+}
 
 /* 下にまだ商品があることを示すバッジ。
    ⚠️ 高さを食う行にすると、その分だけ伝票エリアが縮んで

@@ -2,6 +2,12 @@ import { state, go, render } from './state.js';
 import { esc } from './escape.js';
 import { summarize, productBreakdown } from '../core/summary.js';
 import { pushAll, fetchAll, getSyncKey, setSyncKey } from '../sync.js';
+import { eventLabel, eventById } from '../core/events.js';
+
+function eventIcon(terminal) {
+  const e = eventById(terminal);
+  return e ? e.icon : '🧾';
+}
 
 const YEN = (n) => `¥${n.toLocaleString('ja-JP')}`;
 
@@ -66,36 +72,38 @@ export function renderMerged() {
       <p style="font-size:13px;color:var(--gray);line-height:1.7">${esc(error)}</p>
       <button class="btn-ghost" data-retry>再読み込み</button></div></div>`;
   } else if (merged) {
-    const all = summarize(merged);
-    const food = summarize(merged.filter((s) => s.terminal === 'food'));
-    const drink = summarize(merged.filter((s) => s.terminal === 'drink'));
-    const breakdown = productBreakdown(merged);
+    // ⚠️ 2026-09-28: イベント（マルシェ/祭り）が混在すると総売上が合算されて
+    // 「今日いくら売れたか」が読めなくなる。いま選んでいるイベントの分だけを見る。
+    const mine = merged.filter((s) => s.terminal === state.terminal);
+    const all = summarize(mine);
+    const breakdown = productBreakdown(mine);
+    const otherCount = merged.length - mine.length;
     body = `
       <div class="kpi">
         <div class="kpi__box kpi__box--main">
-          <div class="kpi__label">総売上（2窓口合算）</div>
+          <div class="kpi__label">${esc(eventLabel(state.terminal))} の総売上（全端末）</div>
           <div class="kpi__value">${YEN(all.totalSales)}</div>
         </div>
-        <div class="kpi__box"><div class="kpi__label">🍔 フード</div><div class="kpi__value">${YEN(food.totalSales)}</div></div>
-        <div class="kpi__box"><div class="kpi__label">🥤 ドリンク</div><div class="kpi__value">${YEN(drink.totalSales)}</div></div>
         <div class="kpi__box"><div class="kpi__label">会計数</div><div class="kpi__value">${all.count}</div></div>
+        <div class="kpi__box"><div class="kpi__label">平均</div><div class="kpi__value">${YEN(all.average)}</div></div>
         <div class="kpi__box"><div class="kpi__label">PayPay</div><div class="kpi__value">${YEN(all.paypayTotal)}</div></div>
         <div class="kpi__box"><div class="kpi__label">商品券</div><div class="kpi__value">${all.voucherCount}<span style="font-size:12px;color:var(--gray)">枚</span></div></div>
       </div>
       <div class="scroll">
         <div class="pad">
+          ${otherCount > 0 ? `<div class="card" style="font-size:13px;color:var(--gray);line-height:1.7">このサーバーには他のイベントの会計も ${otherCount}件 ありますが、ここには出していません（イベントを切り替えると見られます）。</div>` : ''}
           ${all.unpaidTotal > 0 ? `<div class="sheet__warn" style="margin-bottom:10px">未納が ${YEN(all.unpaidTotal)} あります（職員販売・回収前）</div>` : ''}
           <div class="card">
-            <h2>商品別（2窓口合算）</h2>
+            <h2>商品別（全端末の合算）</h2>
             ${breakdown.map((p) => `
               <div class="pbreak__row"><span>${esc(p.name)}</span><span><strong>${p.qty}</strong> / ${YEN(p.amount)}</span></div>
             `).join('') || '<div class="cart__empty">まだデータがありません</div>'}
           </div>
           <div class="card">
             <h2>最近の会計（全端末・最新30件）</h2>
-            ${merged.slice(0, 30).map((s) => `
+            ${mine.slice(0, 30).map((s) => `
               <div class="pbreak__row">
-                <span>${s.terminal === 'food' ? '🍔' : '🥤'} 顧客${s.seq}${s.staffName ? ` 👤${esc(s.staffName)}` : ''}${s.status === 'voided' ? ' <span style="color:var(--red)">取消</span>' : ''}</span>
+                <span>${esc(eventIcon(s.terminal))} 顧客${s.seq}${s.staffName ? ` 👤${esc(s.staffName)}` : ''}${s.status === 'voided' ? ' <span style="color:var(--red)">取消</span>' : ''}</span>
                 <span><strong>${YEN(s.total)}</strong> <span style="color:var(--gray);font-size:12px">${hhmm(s.created_at)}</span></span>
               </div>
             `).join('')}

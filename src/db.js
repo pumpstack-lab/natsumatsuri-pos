@@ -82,6 +82,18 @@ export async function deleteMeta(key) {
   return asPromise(tx(db, STORE_META, 'readwrite').delete(key));
 }
 
+// 指定したIDの売上だけを消す。イベント単位の消去に使う。
+// clearSales()（全消去）は他イベントを巻き込むため画面からは呼ばない。
+export async function deleteSalesByIds(ids) {
+  const db = await openDb();
+  const store = tx(db, STORE_SALES, 'readwrite');
+  for (const id of ids) store.delete(id);
+  return new Promise((resolve, reject) => {
+    store.transaction.oncomplete = () => resolve(ids.length);
+    store.transaction.onerror = () => reject(store.transaction.error);
+  });
+}
+
 export async function clearSales() {
   const db = await openDb();
   await asPromise(tx(db, STORE_SALES, 'readwrite').clear());

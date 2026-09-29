@@ -1,10 +1,10 @@
 import { state, go, render, resetCart } from './state.js';
 import { esc } from './escape.js';
 import { eventLabel } from '../core/events.js';
-import { summarize, productBreakdown } from '../core/summary.js';
+import { summarize, productBreakdown, salesToClear } from '../core/summary.js';
 import { buildXlsx } from '../core/xlsx.js';
 import { detailSheet, summarySheet, productSheet, xlsxFileName } from '../core/exportsheets.js';
-import { clearSales } from '../db.js';
+import { deleteSalesByIds } from '../db.js';
 
 const YEN = (n) => `¥${n.toLocaleString('ja-JP')}`;
 
@@ -92,7 +92,7 @@ export function renderExport() {
           3. 「集計結果」シートに総売上・PayPay・未納・商品券が自動で出ます
         </div>
 
-        <button class="btn-danger" data-clear-sales style="margin-top:24px"${state.sales.length === 0 ? ' disabled' : ''}>🧹 この端末の売上を全消去（祭り前リセット）</button>
+        <button class="btn-danger" data-clear-sales style="margin-top:24px"${sales.length === 0 ? ' disabled' : ''}>🧹 このイベントの売上を消去（本番前リセット）</button>
       </div>
     </div>
   `;
@@ -104,17 +104,24 @@ export function renderExport() {
     download(bytes, xlsxFileName(state.terminal, new Date()));
   });
   el.querySelector('[data-clear-sales]').addEventListener('click', async () => {
-    const n = state.sales.length;
-    if (n === 0) return;
-    const ok = confirm(`この端末に記録された売上 ${n}件 をすべて消します。商品・価格・同期キーは消えません。\n\n⚠️ 元に戻せません。祭りが始まる前にだけ使ってください。`);
+    // ⚠️ 消すのは「いま選んでいるイベント」の分だけ。
+    // 以前は端末内の全売上を消していたため、マルシェのテスト売上を消すつもりで
+    // 9/19の祭りの記録まで消える状態だった（2026-09-28 ネイト指摘）。
+    const { target, otherCount, otherLabels } = salesToClear(state.sales, state.terminal);
+    if (target.length === 0) { alert(`${label}の売上はまだありません。`); return; }
+    const keep = otherCount > 0
+      ? `\n\n✅ 他のイベント（${otherLabels.join('・')}）の売上 ${otherCount}件 は消えません。`
+      : '';
+    const ok = confirm(`「${label}」の売上 ${target.length}件 を消します。商品・価格・同期キーは消えません。${keep}\n\n⚠️ 元に戻せません。本番が始まる前にだけ使ってください。`);
     if (!ok) return;
     const input = prompt('確認のため「削除」と入力してください');
     if (input !== '削除') { alert('キャンセルしました'); return; }
-    await clearSales();
-    state.sales = [];
+    const ids = new Set(target.map((s) => s.id));
+    await deleteSalesByIds([...ids]);
+    state.sales = state.sales.filter((s) => !ids.has(s.id));
     resetCart();
     render();
-    alert(`売上 ${n}件を消去しました`);
+    alert(`${label}の売上 ${target.length}件を消去しました`);
   });
 
   return el;

@@ -329,7 +329,7 @@ export function renderHistory() {
     if (sel) sel.addEventListener('change', () => {
       const p = state.products.find((x) => x.id === sel.value);
       if (p) {
-        draft.push({ product_id: p.id, name: p.name, unit_price: p.price, qty: 1 });
+        draft.push({ product_id: p.id, name: p.name, unit_price: p.price, qty: 1, category: p.category ?? '' });
         render();
       }
     });

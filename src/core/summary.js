@@ -1,3 +1,23 @@
+import { eventById } from './events.js';
+
+// 「この端末の売上を全消去」の対象を決める。
+// ⚠️ 2026-09-28 ネイト指摘: 元の実装は端末内の全売上を消しており、
+// マルシェのテスト売上を消すつもりで**9/19の祭りの記録まで消える**状態だった。
+// 選んでいるイベントの分だけを対象にし、他イベントに何件残るかも返して
+// confirm で知らせる（消えないことを明示するため）。
+export function salesToClear(sales, terminal) {
+  if (!terminal) return { target: [], otherCount: sales.length, otherLabels: [] };
+  const target = sales.filter((s) => s.terminal === terminal);
+  const others = sales.filter((s) => s.terminal !== terminal);
+  const labels = [];
+  for (const s of others) {
+    const e = eventById(s.terminal);
+    const name = e ? e.name : s.terminal;
+    if (!labels.includes(name)) labels.push(name);
+  }
+  return { target, otherCount: others.length, otherLabels: labels };
+}
+
 function activeOnly(sales) {
   return sales.filter((s) => s.status === 'active');
 }

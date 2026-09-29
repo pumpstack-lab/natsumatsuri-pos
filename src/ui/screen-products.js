@@ -2,6 +2,7 @@ import { esc } from './escape.js';
 import { state, go, render } from './state.js';
 import { reorderProducts } from '../core/products.js';
 import { putProducts } from '../db.js';
+import { eventLabel } from '../core/events.js';
 
 const YEN = (n) => `¥${n.toLocaleString('ja-JP')}`;
 
@@ -94,7 +95,7 @@ export function renderProducts() {
   const el = document.createElement('div');
   el.className = 'screen';
   const terminal = state.terminal ?? 'food';
-  const label = terminal === 'food' ? '🍔 フード' : '🥤 ドリンク';
+  const label = eventLabel(terminal);
   const list = listFor(terminal);
 
   el.innerHTML = `

@@ -229,3 +229,42 @@ test('productSheet: 同じ商品が単価違いで混ざったら単価は「混
   assert.equal(row[3], 2);
   assert.equal(row[4], 500);
 });
+
+// --- 売上消去の範囲（2026-09-28 ネイト指摘: 祭りのデータが巻き込まれる） ---
+import { salesToClear } from '../src/core/summary.js';
+
+const MIXED = [
+  { id: 'a', terminal: 'marche', total: 100, status: 'active' },
+  { id: 'b', terminal: 'marche', total: 200, status: 'active' },
+  { id: 'c', terminal: 'food', total: 600, status: 'active' },
+  { id: 'd', terminal: 'drink', total: 500, status: 'voided' },
+];
+
+test('salesToClear: 選んでいるイベントの売上だけを対象にする', () => {
+  const r = salesToClear(MIXED, 'marche');
+  assert.deepEqual(r.target.map((s) => s.id), ['a', 'b']);
+});
+
+test('salesToClear: 他イベントに残る件数を返す（confirmで知らせる）', () => {
+  const r = salesToClear(MIXED, 'marche');
+  assert.equal(r.otherCount, 2);
+  assert.deepEqual(r.otherLabels.sort(), ['ドリンク（夏祭り）', 'フード（夏祭り）']);
+});
+
+test('salesToClear: 取消の会計も消去対象に含める（端末から消すため）', () => {
+  const r = salesToClear(MIXED, 'drink');
+  assert.deepEqual(r.target.map((s) => s.id), ['d']);
+});
+
+test('salesToClear: 他イベントが無ければotherCountは0', () => {
+  const only = [{ id: 'x', terminal: 'marche', total: 100, status: 'active' }];
+  const r = salesToClear(only, 'marche');
+  assert.equal(r.otherCount, 0);
+  assert.deepEqual(r.otherLabels, []);
+});
+
+test('salesToClear: イベント未選択なら何も消さない（事故防止）', () => {
+  const r = salesToClear(MIXED, null);
+  assert.deepEqual(r.target, []);
+  assert.equal(r.otherCount, 4);
+});
