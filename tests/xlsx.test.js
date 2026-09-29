@@ -59,3 +59,13 @@ test('detailSheet: 列構成がテンプレートと同じ（K列=状態・M列=
   assert.equal(rows[0][12], '商品券');
   assert.equal(rows[0][13], '支払い');
 });
+
+test('detailSheet/summarySheet: マルシェの窓口列が日本語で出る', () => {
+  // 2026-09-28 code-review指摘: TERMINAL_LABEL に marche が無く
+  // オーナーが開くExcelの窓口列に英字「marche」が出ていた
+  const s = [{ status: 'active', terminal: 'marche', seq: 1, total: 750, received: 1000,
+    change: 250, id: 'x', created_at: '2026-09-28T10:00:00.000Z',
+    items: [{ name: '魚魚', unit_price: 750, qty: 1, category: 'B型' }] }];
+  assert.equal(detailSheet(s).rows[1][2], 'マルシェ');
+  assert.equal(summarySheet(s).rows[1][1], 'マルシェ');
+});

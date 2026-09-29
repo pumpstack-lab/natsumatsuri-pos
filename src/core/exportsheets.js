@@ -1,6 +1,8 @@
 // Excel書き出し用のシートデータ生成（純粋関数）。
 // 列構成はCSVと同一（既存のExcel合算テンプレートにそのまま貼れる）。
-const TERMINAL_LABEL = { food: 'フード', drink: 'ドリンク' };
+// ⚠️ イベント（terminal）を足したらここにも足す。漏らすと明細・サマリーシートの
+// 窓口列に英字のid（例: marche）がそのまま出る（2026-09-28 code-review指摘）。
+const TERMINAL_LABEL = { marche: 'マルシェ', food: 'フード', drink: 'ドリンク' };
 const STATUS_LABEL = { active: '有効', voided: '取消' };
 const PAYMENT_LABEL = { cash: '現金', paypay: 'PayPay', unpaid: '未納' };
 

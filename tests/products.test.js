@@ -269,3 +269,17 @@ test('hiddenBelowCount: visibleが多すぎても負にならない', () => {
 test('hiddenBelowCount: 0品でも落ちない', () => {
   assert.equal(hiddenBelowCount({ total: 0, visible: 0 }), 0);
 });
+
+test('mergeDefaultProducts: カテゴリーの変更も端末に反映される', () => {
+  // 2026-09-28 code-review指摘: category が反映対象から漏れていた。
+  // カテゴリーを組み替えた時、既に開いた端末だけ旧カテゴリーのまま残り
+  // 「商品がタブから消えた」ように見える事故になる。
+  const stored = [{ id: 'm1', terminal: 'marche', name: '旧名', price: 100, category: '旧分類', sort_order: 3, is_available: false }];
+  const defaults = [{ id: 'm1', terminal: 'marche', name: '新名', price: 680, category: '新分類', sort_order: 0, is_available: true }];
+  const r = mergeDefaultProducts(stored, defaults);
+  assert.equal(r[0].category, '新分類');
+  assert.equal(r[0].name, '新名');
+  assert.equal(r[0].price, 680);
+  assert.equal(r[0].is_available, false, '品切れ状態は運用実績なので保持する');
+  assert.equal(r[0].sort_order, 3, '並び替え結果は保持する');
+});

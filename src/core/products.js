@@ -69,6 +69,10 @@ export function mergeDefaultProducts(stored, defaults) {
       name: d.name,
       price: d.price,
       terminal: d.terminal,
+      // category も更新する。漏らすと、カテゴリーを組み替えた時に
+      // 既に開いた端末だけ旧カテゴリーのまま残り「商品がタブから消えた」
+      // ように見える（2026-09-28 code-review指摘）
+      category: d.category,
     };
   });
   const defaultIds = new Set(defaults.map((d) => d.id));
