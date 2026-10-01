@@ -104,3 +104,37 @@ test('calcChange: 商品券なし（第3引数省略）は従来通り', () => {
   assert.equal(r.change, 600);
   assert.equal(r.cashDue, 1400);
 });
+
+// --- 現場の価格入力（2026-10-01 本番前検証で発見した事故）---
+import { parsePriceInput } from '../src/core/money.js';
+
+test('parsePriceInput: カンマ付きを正しく読む（¥1,500を¥1で売る事故の防止）', () => {
+  // parseInt('1,500') は 1 を返す。ボタンの表示が「1,500円」なので
+  // 職員がカンマごと入力するのは自然な操作
+  assert.equal(parsePriceInput('1,500'), 1500);
+  assert.equal(parsePriceInput('2,600'), 2600);
+  assert.equal(parsePriceInput('1，500'), 1500);   // 全角カンマ
+});
+
+test('parsePriceInput: 全角数字を読む（iPadの日本語キーボード）', () => {
+  assert.equal(parsePriceInput('４８０'), 480);
+  assert.equal(parsePriceInput('１，５００'), 1500);
+});
+
+test('parsePriceInput: 通貨記号・空白が混ざっても読む', () => {
+  assert.equal(parsePriceInput('¥480'), 480);
+  assert.equal(parsePriceInput('480円'), 480);
+  assert.equal(parsePriceInput(' 480 '), 480);
+});
+
+test('parsePriceInput: 普通の半角数字', () => {
+  assert.equal(parsePriceInput('480'), 480);
+  assert.equal(parsePriceInput('1'), 1);
+});
+
+test('parsePriceInput: 無効な入力は null（勝手に解釈しない）', () => {
+  // 「480.5」を480と読むような曖昧な解釈はしない。職員に入れ直してもらう
+  for (const bad of ['', '0', '-100', 'abc', '480.5', '4 8 0円です', null, undefined, '１００円くらい']) {
+    assert.equal(parsePriceInput(bad), null, `${bad} は無効であるべき`);
+  }
+});

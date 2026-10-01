@@ -25,3 +25,21 @@ export function calcChange(total, received, voucherAmount = 0) {
   }
   return { change: received - cashDue, shortage: 0, canComplete: true, cashDue };
 }
+
+// 現場で価格を入力した時の文字列を価格に直す。
+// iPadの日本語キーボードだと全角数字「４８０」が入り、
+// ボタンの表示が「1,500円」なのでカンマ付き「1,500」も入る。
+// parseInt は "1,500" を 1 と読むため、**¥1,500 の商品を ¥1 で売ってしまう**。
+// 無効な入力は null を返し、呼び出し側で弾く（勝手に解釈しない）。
+// 2026-10-01 本番前の総当たり検証で発見。
+export function parsePriceInput(input) {
+  if (input === null || input === undefined) return null;
+  const normalized = String(input)
+    .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))  // 全角→半角
+    .replace(/[,，\s]/g, '')                                                     // カンマ・空白を取る
+    .replace(/[¥￥円]/g, '');                                                    // 通貨記号も許す
+  if (!/^\d+$/.test(normalized)) return null;   // 数字以外が残ったら無効
+  const price = parseInt(normalized, 10);
+  if (!Number.isInteger(price) || price <= 0) return null;
+  return price;
+}

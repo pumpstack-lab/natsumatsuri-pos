@@ -1,4 +1,5 @@
 import { esc } from './escape.js';
+import { parsePriceInput } from '../core/money.js';
 import { state, go, render } from './state.js';
 import { reorderProducts } from '../core/products.js';
 import { putProducts } from '../db.js';
@@ -37,9 +38,11 @@ async function edit(id) {
   if (category === null) return;
   const priceStr = prompt('価格（円・整数）', String(p.price));
   if (priceStr === null) return;
-  const price = parseInt(priceStr, 10);
-  if (!Number.isInteger(price) || price <= 0) {
-    alert('価格は1以上の整数で入力してください。');
+  // 全角数字「４８０」もカンマ付き「1,500」も受ける。
+  // parseInt だと "1,500" が 1 になり ¥1 で売ってしまう（2026-10-01 発見）
+  const price = parsePriceInput(priceStr);
+  if (price === null) {
+    alert('価格は1以上の数字で入力してください。\n（全角や「1,500」のようなカンマ付きでも入力できます）');
     return;
   }
   // 「シュシュ 450円」のように名前に金額が入った商品は、価格だけ直すと
@@ -63,9 +66,11 @@ async function add(terminal) {
   if (category === null) return;
   const priceStr = prompt('価格（円・整数）');
   if (priceStr === null) return;      // キャンセル（入力ミスとは区別する）
-  const price = parseInt(priceStr, 10);
-  if (!Number.isInteger(price) || price <= 0) {
-    alert('価格は1以上の整数で入力してください。');
+  // 全角数字「４８０」もカンマ付き「1,500」も受ける。
+  // parseInt だと "1,500" が 1 になり ¥1 で売ってしまう（2026-10-01 発見）
+  const price = parsePriceInput(priceStr);
+  if (price === null) {
+    alert('価格は1以上の数字で入力してください。\n（全角や「1,500」のようなカンマ付きでも入力できます）');
     return;
   }
   const list = listFor(terminal);
