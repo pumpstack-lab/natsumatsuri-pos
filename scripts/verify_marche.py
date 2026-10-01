@@ -71,12 +71,12 @@ with sync_playwright() as p:
 
         tabs = pg.evaluate("()=>[...document.querySelectorAll('[data-cat]')].map(b=>b.textContent.trim())")
         check(tabs == EXPECT_CATS, f"[{w}x{h}] タブ={tabs}")
-        n_all = pg.evaluate("()=>document.querySelectorAll('.pbtn').length")
-        check(n_all == 37, f"[{w}x{h}] 「すべて」の商品数={n_all}（期待37）")
+        n_all = pg.evaluate("()=>document.querySelectorAll('[data-add]').length")  # 「その他」は商品ではないので除く
+        check(n_all == 39, f"[{w}x{h}] 「すべて」の商品数={n_all}（期待39）")
 
         # カテゴリーを選ぶと商品が入れ替わる
         pg.click("[data-cat='こもあん']"); pg.wait_for_timeout(300)
-        names = pg.evaluate("()=>[...document.querySelectorAll('.pbtn__name')].map(x=>x.textContent.trim())")
+        names = pg.evaluate("()=>[...document.querySelectorAll('.pbtn[data-add] .pbtn__name')].map(x=>x.textContent.trim())")
         check(len(names) == 9, f"[{w}x{h}] こもあんの商品数={len(names)} {names}")
         # 2026-10-01 ブローチ・ボタンかざりが2種ずつあり、名前の金額で見分ける
         check(any(n.startswith("ブローチ 1,100") for n in names)
@@ -87,29 +87,29 @@ with sync_playwright() as p:
 
         # 一味シリーズは3種に分かれている（2026-09-28 オーナー確定）
         pg.click("[data-cat='こもれび']"); pg.wait_for_timeout(300)
-        knames = pg.evaluate("()=>[...document.querySelectorAll('.pbtn__name')].map(x=>x.textContent.trim())")
+        knames = pg.evaluate("()=>[...document.querySelectorAll('.pbtn[data-add] .pbtn__name')].map(x=>x.textContent.trim())")
         for n in ["一味KAN", "すだちの一撃", "ひ〜の用心", "ケチャップ"]:
             check(n in knames, f"[{w}x{h}] こもれびに『{n}』がある")
         # 名前に金額が入った商品は価格行を持たない（showsPriceLine）ので null を許容する
-        prices = pg.evaluate("""()=>Object.fromEntries([...document.querySelectorAll('.pbtn')]
+        prices = pg.evaluate("""()=>Object.fromEntries([...document.querySelectorAll('.pbtn[data-add]')]
           .map(b=>[b.querySelector('.pbtn__name').textContent.trim(),
                    b.querySelector('.pbtn__price')?.textContent.trim() ?? null]))""")
         check(prices.get("すだち×はちみつシロップ") == "¥800", f"[{w}x{h}] 価格表示 すだち×はちみつシロップ={prices.get('すだち×はちみつシロップ')}")
         check(prices.get("おい！ポン酢") == "¥720", f"[{w}x{h}] 価格表示 おい！ポン酢={prices.get('おい！ポン酢')}")
 
         pg.click("[data-cat='B型']"); pg.wait_for_timeout(300)
-        names = pg.evaluate("()=>[...document.querySelectorAll('.pbtn__name')].map(x=>x.textContent.trim())")
+        names = pg.evaluate("()=>[...document.querySelectorAll('.pbtn[data-add] .pbtn__name')].map(x=>x.textContent.trim())")
         check(sorted(names) == sorted(["魚魚", "こもだれ"]), f"[{w}x{h}] B型の商品={names}")
         # 名前に金額がある商品は価格行を二重に出さない（2026-10-01 オーナー指示）
         pg.click("[data-cat='レスポ']"); pg.wait_for_timeout(300)
-        dup = pg.evaluate("""()=>[...document.querySelectorAll('.pbtn')]
+        dup = pg.evaluate("""()=>[...document.querySelectorAll('.pbtn[data-add]')]
           .filter(b=>/\\d\\s*円$/.test(b.querySelector('.pbtn__name').textContent.trim())
                   && b.querySelector('.pbtn__price'))
           .map(b=>b.querySelector('.pbtn__name').textContent.trim())""")
         check(dup == [], f"[{w}x{h}] 金額の二重表示なし（該当={dup}）")
 
         # --- 会計を通す → 先頭タブに戻る ---
-        pg.click(".pbtn"); pg.wait_for_timeout(150)
+        pg.click("[data-add]"); pg.wait_for_timeout(150)
         # 商品の価格に足りる預かりを入れる（価格が上がっても足りるよう¥1,000）
         pg.click("[data-cash='1000']"); pg.wait_for_timeout(150)
         done = pg.evaluate("()=>document.querySelector('[data-done]').disabled")
@@ -127,7 +127,7 @@ with sync_playwright() as p:
 
         check(pg.evaluate("()=>document.querySelectorAll('[data-cat]').length") == 0,
               f"[{w}x{h}] 祭りではカテゴリータブが出ない")
-        fnames = pg.evaluate("()=>[...document.querySelectorAll('.pbtn__name')].map(x=>x.textContent.trim())")
+        fnames = pg.evaluate("()=>[...document.querySelectorAll('.pbtn[data-add] .pbtn__name')].map(x=>x.textContent.trim())")
         check("広島焼き" in fnames and len(fnames) == 5, f"[{w}x{h}] 祭りのフード5品が無傷={fnames}")
         funits = pg.evaluate("()=>[...document.querySelectorAll('[data-cash]')].map(b=>Number(b.dataset.cash))")
         check(funits == [50, 100, 500, 1000, 5000], f"[{w}x{h}] 祭りの金種が無傷={funits}")

@@ -43,7 +43,7 @@ with sync_playwright() as p:
     # 画面に何が出るか
     pg.click("[data-pick=marche]"); pg.wait_for_timeout(500)
     pg.click("[data-cat='レスポ']"); pg.wait_for_timeout(350)
-    shown=pg.evaluate("()=>[...document.querySelectorAll('.pbtn__name')].map(x=>x.textContent.trim())")
+    shown=pg.evaluate("()=>[...document.querySelectorAll('.pbtn[data-add] .pbtn__name')].map(x=>x.textContent.trim())")
     print("  → レスポに出る商品:", shown)
     check("ブレスレット 200円" in shown, "新商品が画面に出る（品切れを引き継いでいない）")
     check(not any(n in shown for n in ["ハロウィンチャーム","ビーズブレスレット"]), "旧商品は画面に出ない")

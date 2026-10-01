@@ -170,13 +170,23 @@ test('filterByCategory: 存在しないカテゴリーなら空（画面は空�
   assert.deepEqual(filterByCategory(MARCHE, 'ない分類'), []);
 });
 
-test('DEFAULT_PRODUCTS: マルシェの商品が37品ある', () => {
+test('DEFAULT_PRODUCTS: こもれびのバッヂ・めじるしチャーム（2026-10-01 オーナー追加）', () => {
+  const byName = Object.fromEntries(DEFAULT_PRODUCTS.map((p) => [p.name, p]));
+  for (const name of ['バッヂ 250円', 'めじるしチャーム 250円']) {
+    assert.ok(byName[name], `${name} が無い`);
+    assert.equal(byName[name].price, 250, `${name} の価格が違う`);
+    assert.equal(byName[name].category, 'こもれび', `${name} の分類が違う`);
+  }
+});
+
+test('DEFAULT_PRODUCTS: マルシェの商品が39品ある', () => {
   // 2026-09-28 一味シリーズを3種に分割＋ケチャップ追加で 28 → 31
   // 2026-10-01 レスポを実物に合わせて5品に・こもあんのブローチ/ボタンかざりを
   //            2種ずつに分割して 31 → 36（オーナーの手書きリストより）
   // 2026-10-01 こもれび価格受領。キーホルダー2種・編み物を廃止(-3)しシュシュ4種を追加(+4)で 36 → 37
+  // 2026-10-01 こもれびにバッヂ・めじるしチャーム（各250円）を追加して 37 → 39
   const marche = DEFAULT_PRODUCTS.filter((p) => p.terminal === 'marche');
-  assert.equal(marche.length, 37);
+  assert.equal(marche.length, 39);
 });
 
 test('DEFAULT_PRODUCTS: マルシェに暫定¥100の商品が残っていない', () => {

@@ -53,7 +53,7 @@ with sync_playwright() as p:
     # フードで会計を作る: 広島焼き¥600を2回(別会計)、冷やしパイン¥300を1回、さらに1件は取消
     pg.click("[data-pick=food]"); pg.wait_for_timeout(400)
     def sell(nth, cash):
-        pg.locator(".pbtn").nth(nth).click(); pg.wait_for_timeout(100)
+        pg.locator(".pbtn[data-add]").nth(nth).click(); pg.wait_for_timeout(100)
         pg.click(f"[data-cash='{cash}']"); pg.wait_for_timeout(100)
         pg.click("[data-done]"); pg.wait_for_timeout(450)
     sell(1, 1000)   # 広島焼き ¥600

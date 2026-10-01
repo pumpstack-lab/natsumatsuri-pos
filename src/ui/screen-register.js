@@ -1,6 +1,7 @@
 import { esc } from './escape.js';
 import { state, go, render, resetCart, nextSeq } from './state.js';
 import { availableProducts, categoriesOf, filterByCategory, gridDensity, hiddenBelowCount, showsPriceLine, ALL_CATEGORY } from '../core/products.js';
+import { parsePriceInput } from '../core/money.js';
 import { eventLabel } from '../core/events.js';
 import { putProducts } from '../db.js';
 import { cartTotal, calcChange } from '../core/money.js';
@@ -25,6 +26,68 @@ function addItem(product) {
     state.cart.push({ product_id: product.id, name: product.name, unit_price: product.price, qty: 1, category: product.category ?? '' });
   }
   render();
+}
+
+// 「その他」＝その場で金額を決めて売る。値札の無い物・端数の調整に使う。
+// ⚠️ 商品マスタには登録しない（当日限りの1件）。カート内では product_id を
+//    毎回ユニークにする。同じ金額でも別の品物なので、まとめて個数2にしない。
+let freeItemCounter = 0;
+function addFreeItem(category, price, name) {
+  freeItemCounter += 1;
+  const label = (name ?? '').trim() || (category ? `${category} その他` : 'その他');
+  state.cart.push({
+    product_id: `free-${Date.now()}-${freeItemCounter}`,
+    name: label,
+    unit_price: price,
+    qty: 1,
+    category: category ?? '',
+  });
+  render();
+}
+
+// 「その他」を押した時の入力。金額は必須、商品名は任意（空ならカテゴリー名で入る）。
+// 「すべて」タブから押された時はカテゴリーが決まらない。
+// マルシェのカテゴリーは**出店者＝売上の帰属先**なので、空のまま登録すると
+// 後から誰のお金か分からなくなり精算で揉める（ネイト指摘）。
+// カテゴリーのあるイベントでは、どの分類かを選んでもらう。
+function askCategory(cats) {
+  const list = cats.map((c, i) => `${i + 1}. ${c}`).join('\n');
+  const ans = window.prompt(`どの分類ですか？番号を入れてください\n${list}`, '');
+  if (ans === null) return null;                       // キャンセル
+  const idx = parseInt(String(ans).replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).trim(), 10);
+  if (!Number.isInteger(idx) || idx < 1 || idx > cats.length) {
+    window.alert('番号で選んでください。');
+    return null;
+  }
+  return cats[idx - 1];
+}
+
+function promptFreeItem(category, cats = []) {
+  const priceStr = window.prompt('金額（円）\n※値札の無い物・端数の調整に使います');
+  if (priceStr === null) return;               // キャンセル
+  const price = parsePriceInput(priceStr);
+  if (price === null) {
+    window.alert('金額は1以上の数字で入力してください。\n（全角や「1,500」のようなカンマ付きでも入力できます）');
+    return;
+  }
+  // 桁の打ち間違い（¥350 のつもりで ¥35000）を1回だけ止める。
+  // 現在のマルシェの最高額は ¥2,600 なので、¥10,000 を超えたら確認する。
+  if (price >= 10000 && !window.confirm(`${YEN(price)} でよろしいですか？\n桁の打ち間違いでなければ「OK」を押してください。`)) {
+    return;
+  }
+  // カテゴリーが決まっていない（「すべて」タブ）なら出店者を選んでもらう
+  let cat = category;
+  if (!cat && cats.length > 0) {
+    cat = askCategory(cats);
+    if (cat === null) return;
+  }
+  // 商品名は任意＝空のまま「OK」で登録できる。
+  // ただし「キャンセル」は取り消しとして扱い、何も足さない。
+  // 金額の打ち間違いに気づいてキャンセルしたのに商品が入っていると、
+  // 行列の中では伝票を見ないので誤った金額のまま会計してしまう（ネイト指摘）。
+  const name = window.prompt(`商品名（空のまま「OK」でも登録できます）\n空なら「${cat ? `${cat} その他` : 'その他'}」で登録します\n※「キャンセル」を押すとこの商品は追加しません`, '');
+  if (name === null) return;
+  addFreeItem(cat, price, name);
 }
 
 function changeQty(productId, delta) {
@@ -302,8 +365,15 @@ export function renderRegister() {
             <button data-cat="${ALL_CATEGORY}" class="${currentCat === ALL_CATEGORY ? 'is-on' : ''}">すべて</button>
             ${cats.map((c) => `<button data-cat="${esc(c)}" class="${currentCat === c ? 'is-on' : ''}">${esc(c)}</button>`).join('')}
           </div>` : ''}
-          <div class="reg__grid ${gridDensity(shown.length)}">
-            ${shown.length === 0 ? '<div class="cart__empty">この分類に売れる商品がありません</div>' : shown.map((p) => `
+          <div class="reg__grid ${gridDensity(shown.length + 1)}">
+            <!-- 値札の無い物・端数の調整用。その場で金額を決めて売る（2026-10-01 オーナー要望）。
+                 ⚠️ 先頭に置くこと。末尾に置くと「すべて」で32品ぶんスクロールしないと
+                    出てこず、行列の中では使えなかった（実測で確認）。 -->
+            <button class="pbtn pbtn--free" data-free="${esc(currentCat === ALL_CATEGORY ? '' : currentCat)}">
+              <span class="pbtn__name">＋ その他</span>
+              <span class="pbtn__price">金額を入力</span>
+            </button>
+            ${shown.map((p) => `
               <button class="pbtn pbtn--${state.terminal}" data-add="${esc(p.id)}">
                 <span class="pbtn__name">${esc(p.name)}</span>
                 ${showsPriceLine(p) ? `<span class="pbtn__price">${YEN(p.price)}</span>` : ''}
@@ -487,6 +557,9 @@ export function renderRegister() {
       state.category = btn.dataset.cat === ALL_CATEGORY ? null : btn.dataset.cat;
       render();
     });
+  });
+  el.querySelectorAll('[data-free]').forEach((btn) => {
+    btn.addEventListener('click', () => promptFreeItem(btn.dataset.free, cats));
   });
   el.querySelectorAll('[data-add]').forEach((btn) => {
     btn.addEventListener('click', () => {

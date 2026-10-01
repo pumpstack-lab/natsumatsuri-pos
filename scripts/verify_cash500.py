@@ -64,7 +64,7 @@ with sync_playwright() as p:
 
         # フード¥500で会計を1件通し、保存された預かり金が¥500として残るか
         pg.click("[data-pick=food]"); pg.wait_for_timeout(300)
-        pg.click(".pbtn"); pg.wait_for_timeout(120)      # 先頭商品（冷やしパイン¥300）
+        pg.click("[data-add]"); pg.wait_for_timeout(120)  # 先頭の「商品」（その他ボタンは data-free なので当たらない）
         pg.click("[data-cash='500']"); pg.wait_for_timeout(120)
         done = pg.evaluate("()=>{const b=document.querySelector('[data-done]');return {disabled:b.disabled,txt:b.textContent.trim()}}")
         check(not done["disabled"], f"[{w}x{h}] ¥300の商品に¥500預かり→支払い完了が押せる disabled={done['disabled']}")

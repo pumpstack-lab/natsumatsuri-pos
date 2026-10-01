@@ -576,3 +576,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 @media (max-height: 600px) and (min-width: 621px) {
   .reg:has(.modebar) .reg__grid { max-height: 23vh; }
 }
+
+/* 「その他」＝その場で金額を決めて売るボタン。
+   通常商品と見分けがつくよう枠線を破線にし、色を控えめにする
+   （押し間違えると金額入力が出るため・2026-10-01） */
+.pbtn--free {
+  border: 2px dashed var(--line, #c9ced6);
+  background: var(--bg-soft, #f6f7f9);
+  color: var(--gray, #6b7280);
+}
+.pbtn--free .pbtn__price { font-weight: 600; }

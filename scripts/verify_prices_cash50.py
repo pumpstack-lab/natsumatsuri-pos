@@ -51,7 +51,7 @@ with sync_playwright() as p:
             units = pg.evaluate("()=>[...document.querySelectorAll('[data-cash]')].map(b=>b.dataset.cash)")
             exp = ["50","100","500","1000","5000"] if term=="food" else ["50","100","1000","5000"]
             check(units==exp, f"[{w}x{h}] {term} 金種ボタン={units}")
-            m = pg.evaluate("""()=>{const d=document.querySelector('[data-done]').getBoundingClientRect();const c=document.querySelector('.cashcol').getBoundingClientRect();const rows=document.querySelectorAll('.cashcol__row').length;const btns=[...document.querySelectorAll('.cashcol__row button')].map(b=>({t:b.textContent.trim(),w:Math.round(b.getBoundingClientRect().width),h:Math.round(b.getBoundingClientRect().height)}));return {doneBottom:d.bottom,doneH:d.height,vh:innerHeight,rows,btns,names:[...document.querySelectorAll('.pbtn')].map(x=>x.textContent.replace(/\\s+/g,' ').trim())}}""")
+            m = pg.evaluate("""()=>{const d=document.querySelector('[data-done]').getBoundingClientRect();const c=document.querySelector('.cashcol').getBoundingClientRect();const rows=document.querySelectorAll('.cashcol__row').length;const btns=[...document.querySelectorAll('.cashcol__row button')].map(b=>({t:b.textContent.trim(),w:Math.round(b.getBoundingClientRect().width),h:Math.round(b.getBoundingClientRect().height)}));return {doneBottom:d.bottom,doneH:d.height,vh:innerHeight,rows,btns,names:[...document.querySelectorAll('.pbtn[data-add]')].map(x=>x.textContent.replace(/\\s+/g,' ').trim())}}""")
             check(m["doneBottom"] <= m["vh"]+0.5 and m["doneH"]>0, f"[{w}x{h}] {term} 支払い完了 bottom={m['doneBottom']:.0f} <= vh={m['vh']}")
             check(m["rows"]==4, f"[{w}x{h}] {term} 金種エリア行数={m['rows']}")
             minw = min(x["w"] for x in m["btns"] if x["t"] and "商品券" not in x["t"])
@@ -61,7 +61,7 @@ with sync_playwright() as p:
             pg.click("[data-go=top]"); pg.wait_for_timeout(200)
         # 修正シート（フード）: 1件登録して履歴から開く
         pg.click("[data-pick=food]"); pg.wait_for_timeout(300)
-        pg.click(".pbtn"); pg.click("[data-done]"); pg.wait_for_timeout(300)
+        pg.click("[data-add]"); pg.click("[data-done]"); pg.wait_for_timeout(300)
         pg.click("[data-go2]"); pg.wait_for_timeout(300)
         pg.click("[data-edit]"); pg.wait_for_timeout(300)
         eu = pg.evaluate("()=>[...document.querySelectorAll('[data-ecash]')].map(b=>b.dataset.ecash)")

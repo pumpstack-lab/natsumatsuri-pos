@@ -1,3 +1,3 @@
 // このファイルの日時が、iPadに入っているアプリのバージョンです。
 // 更新したら必ずこの値と sw.js の CACHE 名を同時に変えてください。
-export const BUILD = '2026-10-01 本番準備OK';
+export const BUILD = '2026-10-01 最終版';

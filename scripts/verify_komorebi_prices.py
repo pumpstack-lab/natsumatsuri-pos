@@ -68,14 +68,14 @@ with sync_playwright() as p:
     tabs = pg.eval_on_selector_all(".cattabs button", "e=>e.map(x=>x.textContent.trim())")
     check("こもれび" in tabs, f"カテゴリータブに「こもれび」がある（実測={tabs}）")
     pg.click(".cattabs button[data-cat='こもれび']"); pg.wait_for_timeout(500)
-    names = pg.eval_on_selector_all(".pbtn__name", "els=>els.map(e=>e.textContent.trim())")
+    names = pg.eval_on_selector_all(".pbtn[data-add] .pbtn__name", "els=>els.map(e=>e.textContent.trim())")
     for gone in ["キーホルダー（紙粘土）","アクリルキーホルダー","編み物"]:
         check(gone not in names, f"画面に「{gone}」が出ない")
     for want in ["シュシュ 450円","シュシュ 300円","みかんちゃん大 1,350円","カレンダー 2,600円"]:
         check(want in names, f"画面に「{want}」が出る")
 
     # 5) 名前に金額が入った商品は価格行を二重に出さない
-    dup = pg.evaluate("""()=>[...document.querySelectorAll('.pbtn')].filter(b=>{
+    dup = pg.evaluate("""()=>[...document.querySelectorAll('.pbtn[data-add]')].filter(b=>{
         const n=b.querySelector('.pbtn__name'), pr=b.querySelector('.pbtn__price');
         return n && pr && /\\d\\s*円$/.test(n.textContent.trim());
       }).map(b=>b.querySelector('.pbtn__name').textContent.trim())""")

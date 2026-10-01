@@ -28,7 +28,7 @@ def db_counts(pg):
 def register_sale(pg):
     pg.click("[data-pick=food]")
     pg.wait_for_timeout(300)
-    pg.click(".pbtn")
+    pg.click("[data-add]")
     pg.click("[data-done]")
     pg.wait_for_timeout(300)
     pg.click("[data-go=top]")
@@ -121,7 +121,7 @@ with sync_playwright() as p:
     pg.wait_for_timeout(200)
     pg.click("[data-pick=food]")
     pg.wait_for_timeout(300)
-    pg.click(".pbtn")
+    pg.click("[data-add]")
     pg.click("[data-done]")
     pg.wait_for_timeout(300)
     latest_seq = pg.evaluate(

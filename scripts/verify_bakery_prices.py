@@ -35,12 +35,12 @@ with sync_playwright() as p:
 
     pg.click("text=マルシェ"); pg.wait_for_timeout(700)
     pg.click(".cattabs button[data-cat='ベーカリー']"); pg.wait_for_timeout(500)
-    names=pg.eval_on_selector_all(".pbtn__name","e=>e.map(x=>x.textContent.trim())")
+    names=pg.eval_on_selector_all(".pbtn[data-add] .pbtn__name","e=>e.map(x=>x.textContent.trim())")
     print("  ベーカリータブ:",names)
     for w in ["とんだバナナ１本 1,500円","トマト&バジルのプリッツ 480円","晩白柚とピスタチオのビスコッティ 480円"]:
         check(w in names, f"画面に「{w}」が出る")
     check("とんだバナナカット 330円" not in names, "品切れの商品はレジに出ない（現場で復活させる運用）")
-    dup=pg.evaluate("""()=>[...document.querySelectorAll('.pbtn')].filter(b=>{
+    dup=pg.evaluate("""()=>[...document.querySelectorAll('.pbtn[data-add]')].filter(b=>{
         const n=b.querySelector('.pbtn__name'),pr=b.querySelector('.pbtn__price');
         return n&&pr&&/\\d\\s*円$/.test(n.textContent.trim());}).map(b=>b.querySelector('.pbtn__name').textContent.trim())""")
     check(dup==[], f"価格行の二重表示なし（違反={dup}）")
