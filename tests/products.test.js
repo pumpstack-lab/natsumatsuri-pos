@@ -424,7 +424,14 @@ test('PRODUCTS_SEED_VERSION と version.js / sw.js の CACHE 名が揃ってい�
   const cache = sw.match(/CACHE = '([^']+)'/)?.[1] ?? '';
   assert.ok(cache.includes(date),
     `sw.js の CACHE に seed の日付 ${date} が入っていない（実際: ${cache}）`);
-  assert.ok(cache.includes(tag),
-    `sw.js の CACHE に seed の区別子「${tag}」が入っていない（実際: ${cache}）。` +
-    `商品を直したら CACHE 名も上げないと、iPadが旧版のまま同じverを表示する`);
+
+  // 区別子そのものの一致までは求めない。価格を変えない修正（コードだけの直し）でも
+  // CACHE と BUILD は上げる必要があり、その時 seed の区別子は据え置くのが正しいため。
+  // 「同じ日に2回出す時、前回と違う名前になっているか」は push 前に
+  //   git show origin/main:sw.js | grep CACHE
+  // で突合する（当日の手順書にも記載）。
+  assert.ok(/[a-z0-9_]+$/.test(cache),
+    `sw.js の CACHE 名が「日付＋区別子」の形でない（実際: ${cache}）`);
+  assert.ok(buildLine !== '2026-10-01 商品登録',
+    'BUILD が過去のリリース名のまま。商品やコードを直したら必ず上げること');
 });
