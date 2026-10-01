@@ -40,10 +40,10 @@ export const DEFAULT_PRODUCTS = [
   { id: 'm30', terminal: 'marche', name: 'ひ〜の用心', price: 680, category: 'こもれび', sort_order: 28, is_available: true },
   { id: 'm31', terminal: 'marche', name: 'ケチャップ', price: 680, category: 'こもれび', sort_order: 29, is_available: true },
   { id: 'm22', terminal: 'marche', name: 'カレンダー 2,600円', price: 2600, category: 'こもれび', sort_order: 30, is_available: true },
-  { id: 'm23', terminal: 'marche', name: 'とんだバナナ１本', price: 100, category: 'ベーカリー', sort_order: 31, is_available: true },
-  { id: 'm24', terminal: 'marche', name: 'とんだバナナカット', price: 100, category: 'ベーカリー', sort_order: 32, is_available: true },
-  { id: 'm25', terminal: 'marche', name: 'トマト&バジルのプリッツ', price: 100, category: 'ベーカリー', sort_order: 33, is_available: true },
-  { id: 'm26', terminal: 'marche', name: '晩白柚とピスタチオのビスコッティ', price: 100, category: 'ベーカリー', sort_order: 34, is_available: true },
+  { id: 'm23', terminal: 'marche', name: 'とんだバナナ１本 1,500円', price: 1500, category: 'ベーカリー', sort_order: 31, is_available: true },
+  { id: 'm24', terminal: 'marche', name: 'とんだバナナカット 330円', price: 330, category: 'ベーカリー', sort_order: 32, is_available: true },
+  { id: 'm25', terminal: 'marche', name: 'トマト&バジルのプリッツ 480円', price: 480, category: 'ベーカリー', sort_order: 33, is_available: true },
+  { id: 'm26', terminal: 'marche', name: '晩白柚とピスタチオのビスコッティ 480円', price: 480, category: 'ベーカリー', sort_order: 34, is_available: true },
   { id: 'm27', terminal: 'marche', name: '魚魚', price: 750, category: 'B型', sort_order: 35, is_available: true },
   { id: 'm28', terminal: 'marche', name: 'こもだれ', price: 680, category: 'B型', sort_order: 36, is_available: true },
 
@@ -78,7 +78,7 @@ export const RETIRED_PRODUCT_IDS = [
   'm12',  // 編み物
 ];
 
-export const PRODUCTS_SEED_VERSION = '2026-10-01-komorebi';
+export const PRODUCTS_SEED_VERSION = '2026-10-01-bakery';
 
 // stored（IndexedDBの現在値）に defaults の最新の名前・価格・terminal を反映する。
 // is_available（品切れ状態）と sort_order（並び替え結果）は運用中の実績なので保持する。

@@ -179,6 +179,26 @@ test('DEFAULT_PRODUCTS: マルシェの商品が37品ある', () => {
   assert.equal(marche.length, 37);
 });
 
+test('DEFAULT_PRODUCTS: マルシェに暫定¥100の商品が残っていない', () => {
+  // 2026-10-01 全品の価格がオーナーから届いた。以後 ¥100 は「価格未確定の置き去り」の
+  // サインなので、残っていたら落ちるようにして当日の金銭事故を防ぐ
+  const left = DEFAULT_PRODUCTS.filter((p) => p.terminal === 'marche' && p.price === 100);
+  assert.deepEqual(left.map((p) => p.name), [], '価格未確定(¥100)の商品が残っている');
+});
+
+test('DEFAULT_PRODUCTS: ベーカリー4品の価格確定（2026-10-01 オーナー受領）', () => {
+  const want = {
+    'とんだバナナ１本 1,500円': 1500,
+    'とんだバナナカット 330円': 330,
+    'トマト&バジルのプリッツ 480円': 480,
+    '晩白柚とピスタチオのビスコッティ 480円': 480,
+  };
+  const byName = Object.fromEntries(DEFAULT_PRODUCTS.map((p) => [p.name, p.price]));
+  for (const [name, price] of Object.entries(want)) {
+    assert.equal(byName[name], price, `${name} の価格が違う`);
+  }
+});
+
 test('DEFAULT_PRODUCTS: こもれびの価格確定8品（2026-10-01 オーナー受領）', () => {
   const want = {
     'シュシュ 450円': 450, 'シュシュ 400円': 400,
