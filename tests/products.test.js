@@ -170,11 +170,38 @@ test('filterByCategory: 存在しないカテゴリーなら空（画面は空�
   assert.deepEqual(filterByCategory(MARCHE, 'ない分類'), []);
 });
 
-test('DEFAULT_PRODUCTS: マルシェの商品が31品ある', () => {
-  // 2026-09-28 一味シリーズを3種（一味KAN/すだちの一撃/ひ〜の用心）に分割し
-  // ケチャップを追加したため 28 → 31（オーナー確定）
+test('DEFAULT_PRODUCTS: マルシェの商品が36品ある', () => {
+  // 2026-09-28 一味シリーズを3種に分割＋ケチャップ追加で 28 → 31
+  // 2026-10-01 レスポを実物に合わせて5品に・こもあんのブローチ/ボタンかざりを
+  //            2種ずつに分割して 31 → 36（オーナーの手書きリストより）
   const marche = DEFAULT_PRODUCTS.filter((p) => p.terminal === 'marche');
-  assert.equal(marche.length, 31);
+  assert.equal(marche.length, 36);
+});
+
+test('DEFAULT_PRODUCTS: レスポは実物5品（手書きの名称どおり）', () => {
+  const respo = DEFAULT_PRODUCTS.filter((p) => p.category === 'レスポ');
+  assert.deepEqual(respo.map((p) => [p.name, p.price]), [
+    ['ブレスレット 200円', 200],
+    ['ブレスレット 400円', 400],
+    ['チャーム 500円', 500],
+    ['チャーム 600円', 600],
+    ['チャーム・ブレスレット（花柄） 250円', 250],
+  ]);
+});
+
+test('DEFAULT_PRODUCTS: 同名で価格違いの商品は名前の金額で見分けられる', () => {
+  // ブローチ・ボタンかざり・ブレスレット・チャームは2種ずつある。
+  // 職員がレジで取り違えないよう、名前に金額を入れている（2026-10-01 オーナー指示）
+  const marche = DEFAULT_PRODUCTS.filter((p) => p.terminal === 'marche');
+  const names = marche.map((p) => p.name);
+  assert.equal(new Set(names).size, names.length, '同じ名前の商品が2つある');
+  for (const p of marche) {
+    if (p.price === 100) continue;   // 価格未確定の暫定品は対象外
+    const inName = p.name.replace(/,/g, '').match(/(\d+)円$/);
+    if (inName) {
+      assert.equal(Number(inName[1]), p.price, `${p.name} の名前の金額と価格が食い違う`);
+    }
+  }
 });
 
 test('DEFAULT_PRODUCTS: 価格が確定した11品は正しい税込価格が入る', () => {
@@ -203,8 +230,8 @@ test('DEFAULT_PRODUCTS: マルシェの商品は全部カテゴリーを持つ',
 
 test('DEFAULT_PRODUCTS: たわしはひらがなで統一（オーナー確定2026-09-25）', () => {
   const names = DEFAULT_PRODUCTS.map((p) => p.name);
-  assert.ok(names.includes('アクリルたわし（スマイル）'));
-  assert.ok(names.includes('アクリルたわし（くま）'));
+  assert.ok(names.some((n) => n.startsWith('アクリルたわし（スマイル')));
+  assert.ok(names.some((n) => n.startsWith('アクリルたわし（くま')));
   assert.ok(!names.some((n) => n.includes('タワシ')), 'カタカナのタワシが残っている');
 });
 
@@ -222,7 +249,7 @@ test('DEFAULT_PRODUCTS: idが全商品で重複しない', () => {
 test('DEFAULT_PRODUCTS: マルシェの並び順は0から連番（タブ順が崩れない）', () => {
   const marche = DEFAULT_PRODUCTS.filter((p) => p.terminal === 'marche');
   const orders = marche.map((p) => p.sort_order).sort((a, b) => a - b);
-  assert.deepEqual(orders, [...Array(31).keys()], '欠番や重複があるとタブ順が崩れる');
+  assert.deepEqual(orders, [...Array(marche.length).keys()], '欠番や重複があるとタブ順が崩れる');
 });
 
 // --- 商品グリッドの密度（2026-09-28 こもれび16品が画面から溢れた実測より） ---
@@ -282,4 +309,49 @@ test('mergeDefaultProducts: カテゴリーの変更も端末に反映される'
   assert.equal(r[0].price, 680);
   assert.equal(r[0].is_available, false, '品切れ状態は運用実績なので保持する');
   assert.equal(r[0].sort_order, 3, '並び替え結果は保持する');
+});
+
+// --- 商品ボタンの価格表示（2026-10-01 オーナー指示「名前だけに金額」） ---
+import { showsPriceLine } from '../src/core/products.js';
+
+test('showsPriceLine: 名前の末尾に金額が入っていれば下の価格行は出さない', () => {
+  assert.equal(showsPriceLine({ name: 'ブローチ 1,100円', price: 1100 }), false);
+  assert.equal(showsPriceLine({ name: 'ブレスレット 200円', price: 200 }), false);
+});
+
+test('showsPriceLine: 名前に金額が無ければ下に価格を出す（祭りの商品）', () => {
+  assert.equal(showsPriceLine({ name: '広島焼き', price: 600 }), true);
+  assert.equal(showsPriceLine({ name: 'キーホルダー（紙粘土）', price: 100 }), true);
+});
+
+test('showsPriceLine: 商品名に数字が入っていても「円」で終わらなければ出す', () => {
+  assert.equal(showsPriceLine({ name: 'とんだバナナ１本', price: 100 }), true);
+  assert.equal(showsPriceLine({ name: 'エビフライ（5個入り）', price: 650 }), true);
+});
+
+// --- 廃止した商品の削除（2026-10-01 レスポ入れ替えで必要になった） ---
+import { RETIRED_PRODUCT_IDS } from '../src/core/products.js';
+
+test('mergeDefaultProducts: 廃止した商品は端末から消える', () => {
+  const stored = [
+    { id: 'm01', terminal: 'marche', name: 'ハロウィンチャーム', price: 100, category: 'レスポ', sort_order: 0, is_available: true },
+    { id: 'u1', terminal: 'marche', name: '現場で足した商品', price: 300, category: 'レスポ', sort_order: 99, is_available: true },
+  ];
+  const defaults = [{ id: 'm37', terminal: 'marche', name: 'ブレスレット 200円', price: 200, category: 'レスポ', sort_order: 0, is_available: true }];
+  const r = mergeDefaultProducts(stored, defaults, ['m01']);
+  assert.deepEqual(r.map((p) => p.id), ['m37', 'u1'], '廃止したm01だけが消え、現場で足した商品は残る');
+});
+
+test('mergeDefaultProducts: 廃止リストを渡さなければ従来どおり', () => {
+  const stored = [{ id: 'x', terminal: 'marche', name: '独自', price: 100, sort_order: 0, is_available: true }];
+  const r = mergeDefaultProducts(stored, []);
+  assert.deepEqual(r.map((p) => p.id), ['x']);
+});
+
+test('RETIRED_PRODUCT_IDS: 現行のDEFAULT_PRODUCTSと重複しない', () => {
+  // 廃止したidを現役商品に使い回すと、品切れ状態を引き継いで画面に出なくなる
+  const live = new Set(DEFAULT_PRODUCTS.map((p) => p.id));
+  for (const id of RETIRED_PRODUCT_IDS) {
+    assert.ok(!live.has(id), `${id} は廃止リストにあるのに現行商品にも存在する`);
+  }
 });

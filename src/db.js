@@ -56,6 +56,20 @@ export async function putProducts(products) {
   await Promise.all(products.map((p) => asPromise(store.put(p))));
 }
 
+// 指定したidの商品を端末から消す。廃止した商品の後始末に使う。
+// put だけでは「マージ結果から外れた商品」が端末に残り続けるため
+// （2026-10-01 レスポ入れ替えで実測・旧商品がDBに残っていた）。
+export async function deleteProductsByIds(ids) {
+  if (ids.length === 0) return 0;
+  const db = await openDb();
+  const store = tx(db, STORE_PRODUCTS, 'readwrite');
+  for (const id of ids) store.delete(id);
+  return new Promise((resolve, reject) => {
+    store.transaction.oncomplete = () => resolve(ids.length);
+    store.transaction.onerror = () => reject(store.transaction.error);
+  });
+}
+
 export async function getAllProducts() {
   const db = await openDb();
   return asPromise(tx(db, STORE_PRODUCTS, 'readonly').getAll());

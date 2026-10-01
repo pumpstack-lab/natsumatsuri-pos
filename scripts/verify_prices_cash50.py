@@ -29,11 +29,11 @@ with sync_playwright() as p:
         pg.reload(); pg.wait_for_timeout(600)
         prods = pg.evaluate("""()=>new Promise(res=>{const r=indexedDB.open('natsumatsuri-pos');r.onsuccess=()=>{const q=r.result.transaction('products').objectStore('products').getAll();q.onsuccess=()=>res(q.result)}})""")
         by = {x["id"]:x for x in prods}
-        # 祭り15品 + マルシェ31品 + このスクリプトが入れたユーザー追加1品 = 47
-        # （2026-09-28 一味シリーズを3種に分割＋ケチャップ追加で 28→31）
+        # 祭り15品 + マルシェ36品 + このスクリプトが入れたユーザー追加1品 = 52
+        # （2026-10-01 レスポを実物5品に・ブローチ/ボタンかざりを2種ずつに分割で 31→36）
         fest = [x for x in prods if x["terminal"] in ("food", "drink")]
         check(len(fest)==16, f"[{w}x{h}] 祭りの商品16(15+ユーザー追加1)={len(fest)}")
-        check(len(prods)==47, f"[{w}x{h}] 全商品47(祭り16+マルシェ31)={len(prods)}")
+        check(len(prods)==52, f"[{w}x{h}] 全商品52(祭り16+マルシェ36)={len(prods)}")
         check(by.get("f2",{}).get("name")=="広島焼き" and by["f2"]["price"]==600 and by["f2"]["is_available"]==False, "f2 広島焼き¥600・売り切れ状態は維持")
         check(by.get("f5",{}).get("price")==1000 and by.get("d10",{}).get("price")==250 and by.get("d3",{}).get("price")==500, "f5=1000 d10=250 d3=500")
         check("u1" in by, "ユーザー追加商品が残る")

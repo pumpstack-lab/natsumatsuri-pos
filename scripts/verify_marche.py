@@ -72,14 +72,16 @@ with sync_playwright() as p:
         tabs = pg.evaluate("()=>[...document.querySelectorAll('[data-cat]')].map(b=>b.textContent.trim())")
         check(tabs == EXPECT_CATS, f"[{w}x{h}] タブ={tabs}")
         n_all = pg.evaluate("()=>document.querySelectorAll('.pbtn').length")
-        check(n_all == 31, f"[{w}x{h}] 「すべて」の商品数={n_all}（期待31）")
+        check(n_all == 36, f"[{w}x{h}] 「すべて」の商品数={n_all}（期待36）")
 
         # カテゴリーを選ぶと商品が入れ替わる
         pg.click("[data-cat='こもあん']"); pg.wait_for_timeout(300)
         names = pg.evaluate("()=>[...document.querySelectorAll('.pbtn__name')].map(x=>x.textContent.trim())")
-        check(len(names) == 7, f"[{w}x{h}] こもあんの商品数={len(names)} {names}")
-        check("ブローチ" in names and "ハロウィンチャーム" not in names,
-              f"[{w}x{h}] こもあんの中身が正しい={names}")
+        check(len(names) == 9, f"[{w}x{h}] こもあんの商品数={len(names)} {names}")
+        # 2026-10-01 ブローチ・ボタンかざりが2種ずつあり、名前の金額で見分ける
+        check(any(n.startswith("ブローチ 1,100") for n in names)
+              and any(n.startswith("ブローチ 605") for n in names),
+              f"[{w}x{h}] ブローチ2種が別々に並ぶ={names}")
         on = pg.evaluate("()=>[...document.querySelectorAll('[data-cat].is-on')].map(b=>b.textContent.trim())")
         check(on == ["こもあん"], f"[{w}x{h}] 選択中のタブ={on}")
 
@@ -97,6 +99,13 @@ with sync_playwright() as p:
         pg.click("[data-cat='B型']"); pg.wait_for_timeout(300)
         names = pg.evaluate("()=>[...document.querySelectorAll('.pbtn__name')].map(x=>x.textContent.trim())")
         check(sorted(names) == sorted(["魚魚", "こもだれ"]), f"[{w}x{h}] B型の商品={names}")
+        # 名前に金額がある商品は価格行を二重に出さない（2026-10-01 オーナー指示）
+        pg.click("[data-cat='レスポ']"); pg.wait_for_timeout(300)
+        dup = pg.evaluate("""()=>[...document.querySelectorAll('.pbtn')]
+          .filter(b=>/\\d\\s*円$/.test(b.querySelector('.pbtn__name').textContent.trim())
+                  && b.querySelector('.pbtn__price'))
+          .map(b=>b.querySelector('.pbtn__name').textContent.trim())""")
+        check(dup == [], f"[{w}x{h}] 金額の二重表示なし（該当={dup}）")
 
         # --- 会計を通す → 先頭タブに戻る ---
         pg.click(".pbtn"); pg.wait_for_timeout(150)
@@ -141,7 +150,7 @@ with sync_playwright() as p:
         prod = sheets["商品別"]
         check(prod[0] == ["カテゴリー", "商品名", "単価", "個数", "売上", "構成比(%)"],
               f"[{w}x{h}] 商品別の見出し={prod[0]}")
-        check(prod[1][0] == "B型", f"[{w}x{h}] カテゴリー列に値が入る={prod[1]}")
+        check(prod[1][0] in ("B型", "レスポ"), f"[{w}x{h}] カテゴリー列に値が入る={prod[1]}")
 
         check(errs == [], f"[{w}x{h}] JSエラー={errs}")
 

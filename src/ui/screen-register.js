@@ -1,6 +1,6 @@
 import { esc } from './escape.js';
 import { state, go, render, resetCart, nextSeq } from './state.js';
-import { availableProducts, categoriesOf, filterByCategory, gridDensity, hiddenBelowCount, ALL_CATEGORY } from '../core/products.js';
+import { availableProducts, categoriesOf, filterByCategory, gridDensity, hiddenBelowCount, showsPriceLine, ALL_CATEGORY } from '../core/products.js';
 import { eventLabel } from '../core/events.js';
 import { putProducts } from '../db.js';
 import { cartTotal, calcChange } from '../core/money.js';
@@ -306,7 +306,7 @@ export function renderRegister() {
             ${shown.length === 0 ? '<div class="cart__empty">この分類に売れる商品がありません</div>' : shown.map((p) => `
               <button class="pbtn pbtn--${state.terminal}" data-add="${esc(p.id)}">
                 <span class="pbtn__name">${esc(p.name)}</span>
-                <span class="pbtn__price">${YEN(p.price)}</span>
+                ${showsPriceLine(p) ? `<span class="pbtn__price">${YEN(p.price)}</span>` : ''}
               </button>
             `).join('')}
           </div>

@@ -1,4 +1,4 @@
-import { getAllProducts, putProducts, getMeta, setMeta, getAllSales } from '../db.js';
+import { getAllProducts, putProducts, deleteProductsByIds, getMeta, setMeta, getAllSales } from '../db.js';
 import { DEFAULT_PRODUCTS, PRODUCTS_SEED_VERSION, mergeDefaultProducts } from '../core/products.js';
 import { emptyCashTaps } from '../core/cash.js';
 
@@ -31,8 +31,13 @@ export async function loadAll() {
   let products = await getAllProducts();
   const seed = await getMeta('products_seed', null);
   if (seed !== PRODUCTS_SEED_VERSION) {
+    const before = products.map((p) => p.id);
     products = mergeDefaultProducts(products, DEFAULT_PRODUCTS);
     await putProducts(products);
+    // マージ結果から外れた商品（廃止したもの）を端末からも消す。
+    // put だけでは残り続け、画面には出ないがDBに溜まる（2026-10-01 実測）。
+    const after = new Set(products.map((p) => p.id));
+    await deleteProductsByIds(before.filter((id) => !after.has(id)));
     await setMeta('products_seed', PRODUCTS_SEED_VERSION);
   }
   state.products = products;
