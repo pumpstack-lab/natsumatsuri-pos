@@ -42,7 +42,14 @@ async function edit(id) {
     alert('価格は1以上の整数で入力してください。');
     return;
   }
-  p.name = name.trim() || p.name;
+  // 「シュシュ 450円」のように名前に金額が入った商品は、価格だけ直すと
+  // ボタンの表示が古い金額のまま残る（末尾が「円」だと価格行も出ないので気付けない）。
+  // 名前を触っていない時だけ、名前の中の金額も新しい価格に合わせる（2026-10-01 ネイト指摘）。
+  let newName = name.trim() || p.name;
+  if (newName === p.name && price !== p.price && /\d\s*円$/.test(newName)) {
+    newName = newName.replace(/[\d,]+\s*円$/, `${price.toLocaleString('ja-JP')}円`);
+  }
+  p.name = newName;
   p.price = price;
   p.category = category.trim();
   await persist();

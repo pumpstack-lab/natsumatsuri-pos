@@ -170,12 +170,35 @@ test('filterByCategory: 存在しないカテゴリーなら空（画面は空�
   assert.deepEqual(filterByCategory(MARCHE, 'ない分類'), []);
 });
 
-test('DEFAULT_PRODUCTS: マルシェの商品が36品ある', () => {
+test('DEFAULT_PRODUCTS: マルシェの商品が37品ある', () => {
   // 2026-09-28 一味シリーズを3種に分割＋ケチャップ追加で 28 → 31
   // 2026-10-01 レスポを実物に合わせて5品に・こもあんのブローチ/ボタンかざりを
   //            2種ずつに分割して 31 → 36（オーナーの手書きリストより）
+  // 2026-10-01 こもれび価格受領。キーホルダー2種・編み物を廃止(-3)しシュシュ4種を追加(+4)で 36 → 37
   const marche = DEFAULT_PRODUCTS.filter((p) => p.terminal === 'marche');
-  assert.equal(marche.length, 36);
+  assert.equal(marche.length, 37);
+});
+
+test('DEFAULT_PRODUCTS: こもれびの価格確定8品（2026-10-01 オーナー受領）', () => {
+  const want = {
+    'シュシュ 450円': 450, 'シュシュ 400円': 400,
+    'シュシュ 350円': 350, 'シュシュ 300円': 300,
+    'みかんちゃん大 1,350円': 1350, 'みかんちゃん小 500円': 500,
+    'ちゅるちゅるみかん 500円': 500, 'カレンダー 2,600円': 2600,
+  };
+  const byName = Object.fromEntries(DEFAULT_PRODUCTS.map((p) => [p.name, p.price]));
+  for (const [name, price] of Object.entries(want)) {
+    assert.equal(byName[name], price, `${name} の価格が違う`);
+  }
+});
+
+test('DEFAULT_PRODUCTS: 出品に無い3品はレジから消える（オーナー確認「無し」）', () => {
+  // キーホルダー（紙粘土）/アクリルキーホルダー/編み物。
+  // defaults から消すだけでは端末に残るので RETIRED_PRODUCT_IDS に入れる必要がある
+  for (const id of ['m10', 'm11', 'm12']) {
+    assert.ok(!DEFAULT_PRODUCTS.some((p) => p.id === id), `${id} が defaults に残っている`);
+    assert.ok(RETIRED_PRODUCT_IDS.includes(id), `${id} が RETIRED_PRODUCT_IDS に無い`);
+  }
 });
 
 test('DEFAULT_PRODUCTS: レスポは実物5品（手書きの名称どおり）', () => {
@@ -354,4 +377,34 @@ test('RETIRED_PRODUCT_IDS: 現行のDEFAULT_PRODUCTSと重複しない', () => {
   for (const id of RETIRED_PRODUCT_IDS) {
     assert.ok(!live.has(id), `${id} は廃止リストにあるのに現行商品にも存在する`);
   }
+});
+
+import { PRODUCTS_SEED_VERSION } from '../src/core/products.js';
+
+// --- 反映漏れを機械で止める（2026-10-01 ネイト指摘） ---
+// 商品を直したのに version.js / sw.js の CACHE 名を上げ忘れると、
+// 現場で「ver が最新か」を見ても旧版と区別できず ¥100 のまま売ってしまう。
+// seed version と BUILD / CACHE の「日付以降の区別子」が揃っているかを見る。
+test('PRODUCTS_SEED_VERSION と version.js / sw.js の CACHE 名が揃っている', async () => {
+  const fs = await import('node:fs');
+  const url = await import('node:url');
+  const root = new URL('../', import.meta.url);
+  const build = fs.readFileSync(url.fileURLToPath(new URL('src/version.js', root)), 'utf8');
+  const sw = fs.readFileSync(url.fileURLToPath(new URL('sw.js', root)), 'utf8');
+
+  // seed: '2026-10-01-komorebi' → 日付 '2026-10-01' と 区別子 'komorebi'
+  const m = PRODUCTS_SEED_VERSION.match(/^(\d{4}-\d{2}-\d{2})-(.+)$/);
+  assert.ok(m, `PRODUCTS_SEED_VERSION が「日付-区別子」の形でない: ${PRODUCTS_SEED_VERSION}`);
+  const [, date, tag] = m;
+
+  const buildLine = build.match(/BUILD = '([^']+)'/)?.[1] ?? '';
+  assert.ok(buildLine.includes(date),
+    `version.js の BUILD に seed の日付 ${date} が入っていない（実際: ${buildLine}）`);
+
+  const cache = sw.match(/CACHE = '([^']+)'/)?.[1] ?? '';
+  assert.ok(cache.includes(date),
+    `sw.js の CACHE に seed の日付 ${date} が入っていない（実際: ${cache}）`);
+  assert.ok(cache.includes(tag),
+    `sw.js の CACHE に seed の区別子「${tag}」が入っていない（実際: ${cache}）。` +
+    `商品を直したら CACHE 名も上げないと、iPadが旧版のまま同じverを表示する`);
 });

@@ -66,7 +66,8 @@ with sync_playwright() as p:
     register_sale(pg)
     before = db_counts(pg)
     check(len(before.get("sales", [])) == 2, f"事前: sales=2件 実際={len(before.get('sales', []))}")
-    check(len(before.get("products", [])) == 15, f"事前: products=15件 実際={len(before.get('products', []))}")
+    n_products_before = len(before.get("products", []))
+    check(n_products_before > 0, f"事前: 商品が入っている 実際={n_products_before}件")
 
     # 書き出し画面へ
     pg.click("[data-go=export]")
@@ -102,7 +103,9 @@ with sync_playwright() as p:
 
     after = db_counts(pg)
     check(len(after.get("sales", [])) == 0, f"消去後: sales=0件 実際={len(after.get('sales', []))}")
-    check(len(after.get("products", [])) == 15, f"消去後: products=15件のまま 実際={len(after.get('products', []))}")
+    # 売上消去で商品マスタが増減しないことが要点。件数の直書きは seed 更新で陳腐化する
+    check(len(after.get("products", [])) == n_products_before,
+          f"消去後: 商品は{n_products_before}件のまま 実際={len(after.get('products', []))}")
     meta = {m["key"]: m["value"] for m in after.get("meta", [])}
     check(meta.get("terminal") == "food", f"消去後: meta.terminal='food'が残る 実際={meta.get('terminal')}")
     check("last_sync_at" not in meta, f"消去後: last_sync_atが無い 実際にある値={meta.get('last_sync_at')}")

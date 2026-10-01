@@ -72,7 +72,7 @@ with sync_playwright() as p:
         tabs = pg.evaluate("()=>[...document.querySelectorAll('[data-cat]')].map(b=>b.textContent.trim())")
         check(tabs == EXPECT_CATS, f"[{w}x{h}] タブ={tabs}")
         n_all = pg.evaluate("()=>document.querySelectorAll('.pbtn').length")
-        check(n_all == 36, f"[{w}x{h}] 「すべて」の商品数={n_all}（期待36）")
+        check(n_all == 37, f"[{w}x{h}] 「すべて」の商品数={n_all}（期待37）")
 
         # カテゴリーを選ぶと商品が入れ替わる
         pg.click("[data-cat='こもあん']"); pg.wait_for_timeout(300)
@@ -90,9 +90,10 @@ with sync_playwright() as p:
         knames = pg.evaluate("()=>[...document.querySelectorAll('.pbtn__name')].map(x=>x.textContent.trim())")
         for n in ["一味KAN", "すだちの一撃", "ひ〜の用心", "ケチャップ"]:
             check(n in knames, f"[{w}x{h}] こもれびに『{n}』がある")
+        # 名前に金額が入った商品は価格行を持たない（showsPriceLine）ので null を許容する
         prices = pg.evaluate("""()=>Object.fromEntries([...document.querySelectorAll('.pbtn')]
           .map(b=>[b.querySelector('.pbtn__name').textContent.trim(),
-                   b.querySelector('.pbtn__price').textContent.trim()]))""")
+                   b.querySelector('.pbtn__price')?.textContent.trim() ?? null]))""")
         check(prices.get("すだち×はちみつシロップ") == "¥800", f"[{w}x{h}] 価格表示 すだち×はちみつシロップ={prices.get('すだち×はちみつシロップ')}")
         check(prices.get("おい！ポン酢") == "¥720", f"[{w}x{h}] 価格表示 おい！ポン酢={prices.get('おい！ポン酢')}")
 

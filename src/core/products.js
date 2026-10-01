@@ -23,28 +23,29 @@ export const DEFAULT_PRODUCTS = [
   { id: 'm35', terminal: 'marche', name: 'ブローチ 605円', price: 605, category: 'こもあん', sort_order: 11, is_available: true },
   { id: 'm09', terminal: 'marche', name: 'ボタンかざり 300円', price: 300, category: 'こもあん', sort_order: 12, is_available: true },
   { id: 'm36', terminal: 'marche', name: 'ボタンかざり 250円', price: 250, category: 'こもあん', sort_order: 13, is_available: true },
-  { id: 'm10', terminal: 'marche', name: 'キーホルダー（紙粘土）', price: 100, category: 'こもれび', sort_order: 14, is_available: true },
-  { id: 'm11', terminal: 'marche', name: 'アクリルキーホルダー', price: 100, category: 'こもれび', sort_order: 15, is_available: true },
-  { id: 'm12', terminal: 'marche', name: '編み物', price: 100, category: 'こもれび', sort_order: 16, is_available: true },
-  { id: 'm13', terminal: 'marche', name: 'みかんちゃん大', price: 100, category: 'こもれび', sort_order: 17, is_available: true },
-  { id: 'm14', terminal: 'marche', name: 'みかんちゃん小', price: 100, category: 'こもれび', sort_order: 18, is_available: true },
-  { id: 'm15', terminal: 'marche', name: 'すだち×はちみつシロップ', price: 800, category: 'こもれび', sort_order: 19, is_available: true },
-  { id: 'm16', terminal: 'marche', name: 'ススメご飯', price: 720, category: 'こもれび', sort_order: 20, is_available: true },
-  { id: 'm17', terminal: 'marche', name: 'ちゅるちゅるみかん', price: 100, category: 'こもれび', sort_order: 21, is_available: true },
-  { id: 'm18', terminal: 'marche', name: 'ノンオイルドレッシング', price: 720, category: 'こもれび', sort_order: 22, is_available: true },
-  { id: 'm19', terminal: 'marche', name: 'おい！ポン酢', price: 720, category: 'こもれび', sort_order: 23, is_available: true },
-  { id: 'm20', terminal: 'marche', name: 'すだちポン酢', price: 720, category: 'こもれび', sort_order: 24, is_available: true },
-  { id: 'm21', terminal: 'marche', name: '一味KAN', price: 680, category: 'こもれび', sort_order: 25, is_available: true },
-  { id: 'm29', terminal: 'marche', name: 'すだちの一撃', price: 680, category: 'こもれび', sort_order: 26, is_available: true },
-  { id: 'm30', terminal: 'marche', name: 'ひ〜の用心', price: 680, category: 'こもれび', sort_order: 27, is_available: true },
-  { id: 'm31', terminal: 'marche', name: 'ケチャップ', price: 680, category: 'こもれび', sort_order: 28, is_available: true },
-  { id: 'm22', terminal: 'marche', name: 'カレンダー', price: 100, category: 'こもれび', sort_order: 29, is_available: true },
-  { id: 'm23', terminal: 'marche', name: 'とんだバナナ１本', price: 100, category: 'ベーカリー', sort_order: 30, is_available: true },
-  { id: 'm24', terminal: 'marche', name: 'とんだバナナカット', price: 100, category: 'ベーカリー', sort_order: 31, is_available: true },
-  { id: 'm25', terminal: 'marche', name: 'トマト&バジルのプリッツ', price: 100, category: 'ベーカリー', sort_order: 32, is_available: true },
-  { id: 'm26', terminal: 'marche', name: '晩白柚とピスタチオのビスコッティ', price: 100, category: 'ベーカリー', sort_order: 33, is_available: true },
-  { id: 'm27', terminal: 'marche', name: '魚魚', price: 750, category: 'B型', sort_order: 34, is_available: true },
-  { id: 'm28', terminal: 'marche', name: 'こもだれ', price: 680, category: 'B型', sort_order: 35, is_available: true },
+  { id: 'm39', terminal: 'marche', name: 'シュシュ 450円', price: 450, category: 'こもれび', sort_order: 14, is_available: true },
+  { id: 'm40', terminal: 'marche', name: 'シュシュ 400円', price: 400, category: 'こもれび', sort_order: 15, is_available: true },
+  { id: 'm41', terminal: 'marche', name: 'シュシュ 350円', price: 350, category: 'こもれび', sort_order: 16, is_available: true },
+  { id: 'm42', terminal: 'marche', name: 'シュシュ 300円', price: 300, category: 'こもれび', sort_order: 17, is_available: true },
+  { id: 'm13', terminal: 'marche', name: 'みかんちゃん大 1,350円', price: 1350, category: 'こもれび', sort_order: 18, is_available: true },
+  { id: 'm14', terminal: 'marche', name: 'みかんちゃん小 500円', price: 500, category: 'こもれび', sort_order: 19, is_available: true },
+  { id: 'm15', terminal: 'marche', name: 'すだち×はちみつシロップ', price: 800, category: 'こもれび', sort_order: 20, is_available: true },
+  { id: 'm16', terminal: 'marche', name: 'ススメご飯', price: 720, category: 'こもれび', sort_order: 21, is_available: true },
+  { id: 'm17', terminal: 'marche', name: 'ちゅるちゅるみかん 500円', price: 500, category: 'こもれび', sort_order: 22, is_available: true },
+  { id: 'm18', terminal: 'marche', name: 'ノンオイルドレッシング', price: 720, category: 'こもれび', sort_order: 23, is_available: true },
+  { id: 'm19', terminal: 'marche', name: 'おい！ポン酢', price: 720, category: 'こもれび', sort_order: 24, is_available: true },
+  { id: 'm20', terminal: 'marche', name: 'すだちポン酢', price: 720, category: 'こもれび', sort_order: 25, is_available: true },
+  { id: 'm21', terminal: 'marche', name: '一味KAN', price: 680, category: 'こもれび', sort_order: 26, is_available: true },
+  { id: 'm29', terminal: 'marche', name: 'すだちの一撃', price: 680, category: 'こもれび', sort_order: 27, is_available: true },
+  { id: 'm30', terminal: 'marche', name: 'ひ〜の用心', price: 680, category: 'こもれび', sort_order: 28, is_available: true },
+  { id: 'm31', terminal: 'marche', name: 'ケチャップ', price: 680, category: 'こもれび', sort_order: 29, is_available: true },
+  { id: 'm22', terminal: 'marche', name: 'カレンダー 2,600円', price: 2600, category: 'こもれび', sort_order: 30, is_available: true },
+  { id: 'm23', terminal: 'marche', name: 'とんだバナナ１本', price: 100, category: 'ベーカリー', sort_order: 31, is_available: true },
+  { id: 'm24', terminal: 'marche', name: 'とんだバナナカット', price: 100, category: 'ベーカリー', sort_order: 32, is_available: true },
+  { id: 'm25', terminal: 'marche', name: 'トマト&バジルのプリッツ', price: 100, category: 'ベーカリー', sort_order: 33, is_available: true },
+  { id: 'm26', terminal: 'marche', name: '晩白柚とピスタチオのビスコッティ', price: 100, category: 'ベーカリー', sort_order: 34, is_available: true },
+  { id: 'm27', terminal: 'marche', name: '魚魚', price: 750, category: 'B型', sort_order: 35, is_available: true },
+  { id: 'm28', terminal: 'marche', name: 'こもだれ', price: 680, category: 'B型', sort_order: 36, is_available: true },
 
   // 2026-09-16 行事計画書の実価格です。
   { id: 'f1', terminal: 'food', name: '冷やしパイン', price: 300, sort_order: 0, is_available: true },
@@ -71,9 +72,13 @@ export const DEFAULT_PRODUCTS = [
 export const RETIRED_PRODUCT_IDS = [
   'm01',  // ハロウィンチャーム（現物に無い・レスポはブレスレット/チャームに入れ替え）
   'm02',  // ビーズブレスレット（同上）
+  // 2026-10-01 オーナー確認「無し」＝今回の出品に無いのでレジから消す
+  'm10',  // キーホルダー（紙粘土）
+  'm11',  // アクリルキーホルダー
+  'm12',  // 編み物
 ];
 
-export const PRODUCTS_SEED_VERSION = '2026-10-01-respo';
+export const PRODUCTS_SEED_VERSION = '2026-10-01-komorebi';
 
 // stored（IndexedDBの現在値）に defaults の最新の名前・価格・terminal を反映する。
 // is_available（品切れ状態）と sort_order（並び替え結果）は運用中の実績なので保持する。

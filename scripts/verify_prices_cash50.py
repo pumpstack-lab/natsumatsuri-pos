@@ -4,6 +4,14 @@ python3 scripts/verify_prices_cash50.py  (ローカルで python3 -m http.server
 import json, sys
 from playwright.sync_api import sync_playwright
 
+def marche_seed_count():
+    """src/core/products.js のマルシェ品数を数える（直書きの件数が陳腐化するのを防ぐ）。"""
+    import pathlib, re as _re
+    src = pathlib.Path(__file__).resolve().parent.parent / "src" / "core" / "products.js"
+    body = src.read_text(encoding="utf-8")
+    return len(_re.findall(r"terminal: 'marche'", body))
+
+
 URL = "http://localhost:8087/index.html"
 OUT = sys.argv[1] if len(sys.argv) > 1 else "/tmp"
 OLD = [  # 旧仮価格をIndexedDBに先に入れて「テスト運用済みiPad」を再現
@@ -29,11 +37,12 @@ with sync_playwright() as p:
         pg.reload(); pg.wait_for_timeout(600)
         prods = pg.evaluate("""()=>new Promise(res=>{const r=indexedDB.open('natsumatsuri-pos');r.onsuccess=()=>{const q=r.result.transaction('products').objectStore('products').getAll();q.onsuccess=()=>res(q.result)}})""")
         by = {x["id"]:x for x in prods}
-        # 祭り15品 + マルシェ36品 + このスクリプトが入れたユーザー追加1品 = 52
-        # （2026-10-01 レスポを実物5品に・ブローチ/ボタンかざりを2種ずつに分割で 31→36）
+        # 件数は seed の実数から導く。オーナーから価格が届くたびにマルシェの品数は変わるので、
+        # 数字を直書きすると毎回この検証が嘘で落ちる（2026-10-01 実際に落ちた）。
+        n_marche = marche_seed_count()
         fest = [x for x in prods if x["terminal"] in ("food", "drink")]
         check(len(fest)==16, f"[{w}x{h}] 祭りの商品16(15+ユーザー追加1)={len(fest)}")
-        check(len(prods)==52, f"[{w}x{h}] 全商品52(祭り16+マルシェ36)={len(prods)}")
+        check(len(prods)==n_marche+16, f"[{w}x{h}] 全商品{n_marche+16}(祭り16+マルシェ{n_marche})={len(prods)}")
         check(by.get("f2",{}).get("name")=="広島焼き" and by["f2"]["price"]==600 and by["f2"]["is_available"]==False, "f2 広島焼き¥600・売り切れ状態は維持")
         check(by.get("f5",{}).get("price")==1000 and by.get("d10",{}).get("price")==250 and by.get("d3",{}).get("price")==500, "f5=1000 d10=250 d3=500")
         check("u1" in by, "ユーザー追加商品が残る")
