@@ -119,6 +119,7 @@ let saving = false;
 
 // 保存に失敗した会計の控え。「もう一度押す」時に伝票が同じなら、この会計（同じid）を使い回す。
 // 保存が時間切れでも裏で遅れて書き込まれていることがあり、新しく作り直すと二重登録になる（2026-10-03）。
+// ※ イベントや画面を切り替えても捨てない。捨てると「実は保存されていた」の確認ができなくなる（2026-10-03 レビューで検討）。
 let pendingSale = null;
 let pendingKey = null;
 
@@ -159,7 +160,8 @@ function forgetFailed() {
   pendingKey = null;
 }
 
-const SAVE_FAILED_MESSAGE = '保存できませんでした。もう一度「支払い完了」を押してください。\n\n何度も失敗する場合は、この伝票を紙に控えてから、アプリを閉じて開き直してください。開き直したら、打ち直す前に「履歴・集計」にこの会計が入っていないか確かめてください。';
+// button = 職員に「もう一度押して」と案内するボタンの呼び名
+const saveFailedMessage = (button) => `保存できませんでした。もう一度${button}を押してください。\n\n何度も失敗する場合は、この伝票を紙に控えてから、アプリを閉じて開き直してください。開き直したら、打ち直す前に「履歴・集計」にこの会計が入っていないか確かめてください。`;
 
 async function complete() {
   if (saving) return;
@@ -196,7 +198,7 @@ async function complete() {
     rememberFailed(sale, key);
     if (btn) btn.disabled = false;
     saving = false;
-    alert(SAVE_FAILED_MESSAGE);
+    alert(saveFailedMessage('「支払い完了」'));
     return;
   }
   forgetFailed();
@@ -249,7 +251,7 @@ async function completeStaff(payment) {
   } catch (e) {
     rememberFailed(sale, key);
     saving = false;
-    alert(SAVE_FAILED_MESSAGE.replace('「支払い完了」', '支払い方法のボタン'));
+    alert(saveFailedMessage('支払い方法のボタン'));
     return;
   }
   forgetFailed();

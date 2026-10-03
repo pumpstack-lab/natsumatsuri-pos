@@ -16,6 +16,8 @@ let dbPromise = null;
 // 接続を捨てて、次の操作で開き直させる。
 // 以前は一度作った接続を使い回し続けたため、iPad側で接続が切れると
 // 「保存できませんでした」がアプリを開き直すまで出続けた（2026-10-03 再現・実測）。
+// ⚠️ 作り直しても、時間切れにした書き込みは止まらない（close は進行中の書き込みを待ってから閉じる）。
+//    だから「失敗扱いでも実は保存されていた」が起こり得る → screen-register.js の settlePendingIfSaved で拾う。
 function resetDb(reason) {
   const old = dbPromise;
   dbPromise = null;
