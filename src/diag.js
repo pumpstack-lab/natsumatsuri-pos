@@ -44,7 +44,10 @@ function describe(target) {
   const el = target && target.closest ? target.closest('button, input, select, a, [data-add]') : null;
   if (!el) return target && target.tagName ? `(${target.tagName.toLowerCase()})` : '(不明)';
   const data = Object.keys(el.dataset || {}).map((k) => `${k}=${el.dataset[k]}`).join(' ');
-  const text = (el.textContent || el.value || '').replace(/\s+/g, ' ').trim().slice(0, 24);
+  // 入力欄の中身（職員の名前・金額）は残さない。どの欄を触ったかだけ分かればよい
+  const text = el.tagName === 'INPUT' || el.tagName === 'SELECT'
+    ? `(入力欄 ${el.getAttribute('placeholder') || el.type || ''})`
+    : (el.textContent || '').replace(/\s+/g, ' ').trim().replace(/(職員販売):.*$/, '$1').slice(0, 24);
   return `${text}${data ? ` [${data}]` : ''}${el.disabled ? ' (押せない状態)' : ''}`;
 }
 

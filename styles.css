@@ -589,9 +589,15 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 /* --- 診断画面（2026-10-03 フリーズ調査） --- */
 .top__diag { margin-left: 10px; font-size: 11px; color: var(--gray); text-decoration: underline; min-height: 24px; padding: 0 6px; }
+/* ↑ 職員が行列の中で押す物ではない（オーナー・Getterが調査時に使う）ので、あえて小さく目立たせない */
 .diag { padding: 8px 12px 24px; }
-.diag__lead { font-size: 13px; color: var(--gray); margin: 4px 0 8px; }
+.diag__lead { font-size: 13px; color: #515154; margin: 4px 0 8px; } /* --gray は白地で 3.6:1 しかなく小さい文字に足りない */
 .diag__row { display: grid; grid-template-columns: 112px 120px 1fr; gap: 8px; font-size: 12px; padding: 4px 0; border-bottom: 1px solid #eee; font-variant-numeric: tabular-nums; }
 .diag__row--boot { border-top: 2px solid var(--blue); background: #f0f7ff; font-weight: 700; }
-.diag__row--bad { color: var(--red); font-weight: 700; }
+.diag__row--bad { color: #c4281c; font-weight: 700; } /* --red は白地 3.5:1。12px の文字には暗い赤を使う */
 .diag__d { word-break: break-all; }
+@media (max-width: 600px) {
+  /* スマホ幅では内容の列が細くなりすぎるので、時刻と種類を1行目、内容を2行目に回す */
+  .diag__row { grid-template-columns: 96px 1fr; row-gap: 2px; }
+  .diag__d { grid-column: 1 / -1; }
+}
