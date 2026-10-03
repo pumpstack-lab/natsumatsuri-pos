@@ -5,7 +5,7 @@ import { parsePriceInput } from '../core/money.js';
 import { eventLabel } from '../core/events.js';
 import { putProducts } from '../db.js';
 import { cartTotal, calcChange } from '../core/money.js';
-import { createSale, voidSale } from '../core/sale.js';
+import { createSale, voidSale, saleRetryKey } from '../core/sale.js';
 import { CASH_UNITS_FOR, cashUnitRows, emptyCashTaps, tapsTotal, addTap, VOUCHER_VALUE } from '../core/cash.js';
 import { putSale } from '../db.js';
 import { pushAll } from '../sync.js';
@@ -117,6 +117,29 @@ function clearCash() {
 // （実測：ダブルクリック相当の操作で¥500の会計が2件¥1,000として登録された）
 let saving = false;
 
+// 保存に失敗した会計の控え。「もう一度押す」時に伝票が同じなら、この会計（同じid）を使い回す。
+// 保存が時間切れでも裏で遅れて書き込まれていることがあり、新しく作り直すと二重登録になる（2026-10-03）。
+let pendingSale = null;
+let pendingKey = null;
+
+function saleForAttempt(params) {
+  const key = saleRetryKey(params);
+  if (pendingSale && pendingKey === key) return { sale: pendingSale, key };
+  return { sale: createSale({ ...params, seq: nextSeq(state.terminal), now: new Date().toISOString() }), key };
+}
+
+function rememberFailed(sale, key) {
+  pendingSale = sale;
+  pendingKey = key;
+}
+
+function forgetFailed() {
+  pendingSale = null;
+  pendingKey = null;
+}
+
+const SAVE_FAILED_MESSAGE = '保存できませんでした。もう一度「支払い完了」を押してください。\n\n何度も失敗する場合は、この伝票を紙に控えてから、アプリを閉じて開き直してください。';
+
 async function complete() {
   if (saving) return;
 
@@ -129,13 +152,13 @@ async function complete() {
   const btn = document.querySelector('[data-done]');
   if (btn) btn.disabled = true;
 
-  const sale = createSale({
+  const { sale, key } = saleForAttempt({
     terminal: state.terminal,
-    seq: nextSeq(state.terminal),
     items: state.cart,
     received,
     vouchers: state.vouchers,
-    now: new Date().toISOString(),
+    payment: 'cash',
+    staffName: null,
   });
 
   try {
@@ -143,11 +166,13 @@ async function complete() {
   } catch (e) {
     // 保存に失敗したら伝票を残したまま知らせる。
     // 黙って戻すと「押せていない」と誤解され、二重に打たれる。
+    rememberFailed(sale, key);
     if (btn) btn.disabled = false;
     saving = false;
-    alert('保存できませんでした。もう一度「支払い完了」を押してください。\n\n何度も失敗する場合は紙の伝票に切り替えてください。');
+    alert(SAVE_FAILED_MESSAGE);
     return;
   }
+  forgetFailed();
 
   state.sales.unshift(sale);
   pushAll().catch(() => {});  // オンラインなら裏で同期（オフラインなら黙ってスキップ）
@@ -179,23 +204,23 @@ async function completeStaff(payment) {
   if (total <= 0) return;
   saving = true;
 
-  const sale = createSale({
+  const { sale, key } = saleForAttempt({
     terminal: state.terminal,
-    seq: nextSeq(state.terminal),
     items: state.cart,
     received: null,
     vouchers: 0,
     staffName: state.staffName,
     payment,
-    now: new Date().toISOString(),
   });
   try {
     await putSale(sale);
   } catch (e) {
+    rememberFailed(sale, key);
     saving = false;
-    alert('保存できませんでした。もう一度お試しください。');
+    alert(SAVE_FAILED_MESSAGE.replace('「支払い完了」', '支払い方法のボタン'));
     return;
   }
+  forgetFailed();
   state.sales.unshift(sale);
   pushAll().catch(() => {});
   const label = payment === 'unpaid' ? '未納' : payment === 'paypay' ? 'PayPay' : '現金';

@@ -1,4 +1,4 @@
-const CACHE = 'komoreji-pos-2026-10-01_final';
+const CACHE = 'komoreji-pos-2026-10-01_freeze1003';
 const ASSETS = [
   './',
   './index.html',
@@ -37,6 +37,10 @@ const ASSETS = [
   './src/ui/screen-history.js',
   './src/ui/screen-products.js',
   './src/ui/screen-export.js',
+  './src/diag.js',
+  './src/core/diaglog.js',
+  './src/core/timeout.js',
+  './src/ui/screen-diag.js',
 ];
 
 self.addEventListener('install', (e) => {

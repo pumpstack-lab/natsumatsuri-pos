@@ -586,3 +586,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   color: var(--gray, #6b7280);
 }
 .pbtn--free .pbtn__price { font-weight: 600; }
+
+/* --- 診断画面（2026-10-03 フリーズ調査） --- */
+.top__diag { margin-left: 10px; font-size: 11px; color: var(--gray); text-decoration: underline; min-height: 24px; padding: 0 6px; }
+.diag { padding: 8px 12px 24px; }
+.diag__lead { font-size: 13px; color: var(--gray); margin: 4px 0 8px; }
+.diag__row { display: grid; grid-template-columns: 112px 120px 1fr; gap: 8px; font-size: 12px; padding: 4px 0; border-bottom: 1px solid #eee; font-variant-numeric: tabular-nums; }
+.diag__row--boot { border-top: 2px solid var(--blue); background: #f0f7ff; font-weight: 700; }
+.diag__row--bad { color: var(--red); font-weight: 700; }
+.diag__d { word-break: break-all; }

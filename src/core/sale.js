@@ -68,3 +68,17 @@ export function editSaleItems(sale, newItems, now, options = {}) {
 export function voidSale(sale, now) {
   return { ...sale, status: 'voided', updated_at: now };
 }
+
+// 保存に失敗した会計を「もう一度押す」で再送する時の同一判定キー。
+// 保存が時間切れになっても、裏で書き込みが遅れて成功していることがある。
+// 再送で新しい会計を作ると二重登録になるため、伝票が同じなら同じ会計（同じid）を使い回す。
+export function saleRetryKey({ terminal, items, received, vouchers, payment, staffName }) {
+  return JSON.stringify({
+    terminal,
+    items: items.map((i) => [i.product_id, i.unit_price, i.qty]),
+    received: received ?? null,
+    vouchers: vouchers ?? 0,
+    payment: payment ?? 'cash',
+    staffName: staffName ?? null,
+  });
+}

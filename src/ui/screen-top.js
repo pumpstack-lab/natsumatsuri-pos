@@ -59,7 +59,7 @@ export function renderTop() {
         <button data-go="export">📤 Excel書き出し</button>
         <button data-merged>🌐 合算履歴</button>
       </div>
-      <div class="top__ver">ver ${BUILD}</div>
+      <div class="top__ver">ver ${BUILD}<button class="top__diag" data-diag>🩺 診断</button></div>
       <div class="top__total">
         <span>${state.terminal ? eventLabel(state.terminal) : 'この端末'}の売上</span>
         <strong>${YEN(mine.totalSales)}</strong>
@@ -71,6 +71,7 @@ export function renderTop() {
     btn.addEventListener('click', () => pick(btn.dataset.pick));
   });
   el.querySelector('[data-merged]').addEventListener('click', openMerged);
+  el.querySelector('[data-diag]').addEventListener('click', () => go('diag'));
   el.querySelectorAll('[data-go]').forEach((btn) => {
     btn.addEventListener('click', () => {
       if (!state.terminal && btn.dataset.go !== 'products') {
