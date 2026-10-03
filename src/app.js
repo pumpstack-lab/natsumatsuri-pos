@@ -46,7 +46,7 @@ async function boot() {
     await loadAll();
   } catch (e) {
     diag('エラー', `起動時の読み込み: ${e && e.name} ${e && e.message}`);
-    root.innerHTML = '<div style="padding:24px;font-size:18px;line-height:1.6">読み込みに失敗しました。アプリを閉じて開き直してください。<br><small>（売上は消えていません）</small></div>';
+    root.innerHTML = '<div style="padding:24px;font-size:18px;line-height:1.6">読み込みに失敗しました。<br><button style="margin:12px 0;padding:12px 20px;font-size:18px;border:1px solid #29abd6;border-radius:10px;color:#29abd6" onclick="location.reload()">もう一度読み込む</button><br><small>直らない時はアプリを閉じて開き直してください。売上は通常、端末に残っています。</small></div>';
     return;
   }
   render();

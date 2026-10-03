@@ -7,7 +7,7 @@ import { putProducts } from '../db.js';
 import { cartTotal, calcChange } from '../core/money.js';
 import { createSale, voidSale, saleRetryKey } from '../core/sale.js';
 import { CASH_UNITS_FOR, cashUnitRows, emptyCashTaps, tapsTotal, addTap, VOUCHER_VALUE } from '../core/cash.js';
-import { putSale } from '../db.js';
+import { putSale, getSale } from '../db.js';
 import { pushAll } from '../sync.js';
 
 const YEN = (n) => `¥${n.toLocaleString('ja-JP')}`;
@@ -128,6 +128,27 @@ function saleForAttempt(params) {
   return { sale: createSale({ ...params, seq: nextSeq(state.terminal), now: new Date().toISOString() }), key };
 }
 
+// 失敗扱いにした会計が、実は裏で保存されていたかを確かめる。
+// 伝票を直してから押し直すと別の会計になるので、前の会計が保存済みなら
+// 履歴にも出ず取り消せない「見えない会計」が残り、現金と合わなくなる（2026-10-03 ネイト指摘）。
+// 保存されていたら履歴に入れ、新しい会計は作らずに知らせる。true = 先に進んでよい
+async function settlePendingIfSaved(key) {
+  if (!pendingSale || pendingKey === key) return true;
+  let saved = null;
+  try {
+    saved = await getSale(pendingSale.id);
+  } catch (e) {
+    return true;   // 確かめられない時は従来どおり進める（止めると会計できなくなる）
+  }
+  const prev = pendingSale;
+  forgetFailed();
+  if (!saved) return true;
+  state.sales.unshift(saved);
+  render();
+  alert(`さきほど「保存できませんでした」と出た会計（顧客 ${prev.seq}・${YEN(prev.total)}）は、実際には保存されていました。\n\nいまの伝票はまだ登録していません。二重にならないよう、伝票を見直してください。\n（さきほどの会計を直す時は「直前を修正」を使ってください）`);
+  return false;
+}
+
 function rememberFailed(sale, key) {
   pendingSale = sale;
   pendingKey = key;
@@ -138,7 +159,7 @@ function forgetFailed() {
   pendingKey = null;
 }
 
-const SAVE_FAILED_MESSAGE = '保存できませんでした。もう一度「支払い完了」を押してください。\n\n何度も失敗する場合は、この伝票を紙に控えてから、アプリを閉じて開き直してください。';
+const SAVE_FAILED_MESSAGE = '保存できませんでした。もう一度「支払い完了」を押してください。\n\n何度も失敗する場合は、この伝票を紙に控えてから、アプリを閉じて開き直してください。開き直したら、打ち直す前に「履歴・集計」にこの会計が入っていないか確かめてください。';
 
 async function complete() {
   if (saving) return;
@@ -152,14 +173,20 @@ async function complete() {
   const btn = document.querySelector('[data-done]');
   if (btn) btn.disabled = true;
 
-  const { sale, key } = saleForAttempt({
+  const params = {
     terminal: state.terminal,
     items: state.cart,
     received,
     vouchers: state.vouchers,
     payment: 'cash',
     staffName: null,
-  });
+  };
+  if (!(await settlePendingIfSaved(saleRetryKey(params)))) {
+    if (btn) btn.disabled = false;
+    saving = false;
+    return;
+  }
+  const { sale, key } = saleForAttempt(params);
 
   try {
     await putSale(sale);
@@ -204,14 +231,19 @@ async function completeStaff(payment) {
   if (total <= 0) return;
   saving = true;
 
-  const { sale, key } = saleForAttempt({
+  const params = {
     terminal: state.terminal,
     items: state.cart,
     received: null,
     vouchers: 0,
     staffName: state.staffName,
     payment,
-  });
+  };
+  if (!(await settlePendingIfSaved(saleRetryKey(params)))) {
+    saving = false;
+    return;
+  }
+  const { sale, key } = saleForAttempt(params);
   try {
     await putSale(sale);
   } catch (e) {

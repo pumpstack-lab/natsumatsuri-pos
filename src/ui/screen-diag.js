@@ -29,7 +29,8 @@ export function renderDiag() {
       </span>
     </div>
     <div class="scroll diag">
-      <p class="diag__lead">ver ${esc(BUILD)}／${rows.length}件（新しい順）。固まったら、開き直してすぐこの画面をスクリーンショットしてください。</p>
+      <p class="diag__lead">ver ${esc(BUILD)}／${rows.length}件（新しい順）。固まったら、開き直してすぐこの画面をスクリーンショットしてください。<br>
+        ※「処理が止まっていた」は、入力窓を開いていた間・裏から戻った直後にも出ます（その時は故障ではありません）。</p>
       ${rows.length === 0 ? '<p class="diag__lead">記録はまだありません。</p>' : rows.map((r) => `
         <div class="diag__row ${r.k === '起動' ? 'diag__row--boot' : ''} ${MARK.has(r.k) ? 'diag__row--bad' : ''}">
           <span class="diag__t">${esc(time(r.t))}</span>

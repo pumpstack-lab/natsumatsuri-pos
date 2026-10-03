@@ -89,7 +89,10 @@ export function installDiag(build) {
       if (!document.hidden && now - last > GAP_MS) diag('処理が止まっていた', `${Math.round((now - last) / 1000)}秒`);
       last = now;
     }, HEARTBEAT_MS);
+    // 裏から戻った時・入力窓を閉じた時の空白を「止まっていた」と数えないよう、起点を取り直す
     document.addEventListener('visibilitychange', () => { last = Date.now(); });
+    window.addEventListener('pageshow', () => { last = Date.now(); });
+    window.addEventListener('focus', () => { last = Date.now(); });
   } catch {
     // 記録の仕組みが壊れてもレジは動かす
   }

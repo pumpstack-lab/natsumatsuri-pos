@@ -108,6 +108,10 @@ export async function putSale(sale) {
   return run(STORE_SALES, 'readwrite', (store) => store.put(sale), `会計 ${sale.terminal}-${sale.seq}`);
 }
 
+export async function getSale(id) {
+  return run(STORE_SALES, 'readonly', (store) => store.get(id), '会計の確認');
+}
+
 export async function getAllSales() {
   const all = await run(STORE_SALES, 'readonly', (store) => store.getAll(), '会計の読み込み');
   return all.sort((a, b) => b.created_at.localeCompare(a.created_at));
