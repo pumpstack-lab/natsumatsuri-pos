@@ -160,13 +160,15 @@ with sync_playwright() as p:
     if not offline:
         print("--  オフライン起動は WebKit では測れないため省略（Chromium で測る）")
     if offline:
+        # ⚠️ 2026-10-03: 固定待ち（2.5秒）＋ set_offline では、オフライン用の仕組み（SW）が落ち着く前に
+        #    遮断してしまい、旧版でも新版でも起動失敗が出たり出なかったりした（本番で3回中2回失敗→旧版も同条件で失敗）。
+        #    「SWがページを制御した」を待ってから5秒置き、通信を全部遮断する方法で 新旧・本番とも 9/9 起動を確認した。
         ctx = b.new_context(viewport={"width": 1180, "height": 820})
         pg = ctx.new_page()
         pg.goto(URL)
-        pg.wait_for_timeout(2500)  # SW のインストール待ち
-        pg.reload()
-        pg.wait_for_timeout(1000)
-        ctx.set_offline(True)
+        pg.wait_for_function("() => !!navigator.serviceWorker.controller", timeout=60000)
+        pg.wait_for_timeout(5000)
+        ctx.route("**/*", lambda r: r.abort("internetdisconnected"))
         pg.reload()
         pg.wait_for_timeout(1500)
         ver = pg.locator(".top__ver").inner_text() if pg.locator(".top__ver").count() else "(表示なし)"
